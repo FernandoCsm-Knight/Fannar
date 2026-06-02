@@ -103,7 +103,12 @@ def plot_orthogonal_energy_panel(
     save_current_figure(path)
 
 
-def crop_patch(image: torch.Tensor, score_map: torch.Tensor, crop_size: int, border_fraction: float) -> torch.Tensor:
+def crop_patch(
+    image: torch.Tensor, 
+    score_map: torch.Tensor, 
+    crop_size: int, 
+    border_fraction: float
+) -> torch.Tensor:
     image = image.detach().cpu()
     h, w = int(image.shape[1]), int(image.shape[2])
     score_map = suppress_borders(score_map, border_fraction)

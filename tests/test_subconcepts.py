@@ -1,5 +1,5 @@
-import torch
 import pytest
+import torch
 
 from fannar.concepts import (
     collect_subconcept_records,

@@ -26,7 +26,6 @@ import torch
 
 from ..gram.eigenspace import eigendecompose
 
-
 # ---------------------------------------------------------------------------
 # Funcionais espectrais do laplaciano
 # ---------------------------------------------------------------------------

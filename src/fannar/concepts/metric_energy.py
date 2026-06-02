@@ -139,7 +139,11 @@ def psd_positive_part(matrix: torch.Tensor) -> torch.Tensor:
     return (eigenvectors * eigenvalues.clamp_min(0).unsqueeze(0)) @ eigenvectors.T
 
 
-def normalized_delta(concept_usage: torch.Tensor, contrast_usage: torch.Tensor | None, eps: float = 1e-8) -> torch.Tensor:
+def normalized_delta(
+    concept_usage: torch.Tensor, 
+    contrast_usage: torch.Tensor | None, 
+    eps: float = 1e-8
+) -> torch.Tensor:
     if contrast_usage is None:
         return concept_usage
     contrast_usage = contrast_usage.to(device=concept_usage.device, dtype=concept_usage.dtype)
@@ -248,7 +252,11 @@ def orthogonal_energy_surface(
     )
 
 
-def metric_score_and_coords(metric: torch.Tensor, field: torch.Tensor, grid: tuple[int, int]) -> tuple[torch.Tensor, torch.Tensor]:
+def metric_score_and_coords(
+    metric: torch.Tensor, 
+    field: torch.Tensor, 
+    grid: tuple[int, int]
+) -> tuple[torch.Tensor, torch.Tensor]:
     field = field.detach().float()
     metric = metric.detach().to(device=field.device, dtype=field.dtype)
     field = field - field.mean(dim=0, keepdim=True)

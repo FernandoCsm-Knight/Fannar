@@ -63,7 +63,7 @@ def plot_semantic_scatter_3d(
     opacity: float = 0.85,
     width: int = 900,
     height: int = 720,
-) -> "go.Figure":
+) -> go.Figure:
     """Scatter interativo do espaço de representação induzido pelo kernel K.
 
     Cada ponto corresponde a um objeto (imagem, patch, canal, conceito...).
@@ -254,8 +254,9 @@ def semantic_overlap_score(
 
     Retorna um dicionário ``{(cat_a, cat_b): score}`` para todos os pares.
     """
-    from ..gram.eigenspace import spectral_coordinates
     import numpy as np
+
+    from ..gram.eigenspace import spectral_coordinates
 
     K_work = K.detach().float()
     K_work = 0.5 * (K_work + K_work.T)
