@@ -1,0 +1,67 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "fannar"
+version = "0.1.0"
+description = "Interpretabilidade geométrica de modelos de IA via RKHS, produto tensorial e energia espectral."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "fannar" }]
+keywords = ["interpretability", "rkhs", "kernels", "pytorch", "spectral", "geometry"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "License :: OSI Approved :: MIT License",
+]
+dependencies = [
+    "torch>=2.0",
+    "numpy>=1.23",
+]
+
+[project.optional-dependencies]
+viz = ["matplotlib>=3.6", "plotly>=5.0"]
+sci = ["scipy>=1.10", "scikit-learn>=1.2"]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "hypothesis>=6.0",
+    "ruff>=0.4",
+    "mypy>=1.8",
+]
+all = ["fannar[viz,sci,dev]"]
+
+[project.urls]
+Homepage = "https://example.com/fannar"
+Repository = "https://example.com/fannar"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/fannar"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+ignore = ["E741", "ARG001", "ARG002", "ARG003"]  # i,j,l comuns; args de interface/protocolo
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["ARG", "B", "E501"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_unused_ignores = true
+ignore_missing_imports = true
+files = ["src/fannar"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.coverage.run]
+source = ["fannar"]
+branch = true
