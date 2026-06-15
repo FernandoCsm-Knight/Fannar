@@ -41,6 +41,25 @@ class OrthogonalEnergySurface:
 
 @dataclass
 class GramEnergySurface:
+    """Superfície de energia induzida pela Gram no campo de ativações.
+
+    Campos
+    ------
+    field : (H, W)
+        Mapa suavizado da energia ponderada pelos autovalores da Gram.
+        Alto => localização espacial tem alta projeção nos modos principais.
+    raw : (HW,)
+        Energia bruta (antes do reshape e suavizamento) por localização.
+    grid : (H, W)
+        Dimensões espaciais da grade de ativação.
+    coords_2d : (HW, 2)
+        Coordenadas espectrais 2D (√λ v) no espaço de ativações.
+    coords_3d : (HW, 3)
+        Coordenadas espectrais 3D (√λ v) no espaço de ativações.
+    eigenvalues : (C,)
+        Autovalores da Gram em ordem decrescente.
+    """
+
     field: torch.Tensor
     raw: torch.Tensor
     grid: tuple[int, int]
@@ -51,6 +70,20 @@ class GramEnergySurface:
 
 @dataclass
 class GramMetricUsage:
+    """Uso efetivo da métrica Gram no campo de ativações.
+
+    Campos
+    ------
+    surface : GramEnergySurface
+        Superfície de energia induzida pela Gram.
+    used_similarity : (C, C)
+        Produto elemento a elemento entre a Gram e a covariância empírica do
+        campo centrado — mede quais pares de canais a Gram efetivamente pondera.
+    channel_usage : (C,)
+        Soma por linha de ``used_similarity``; indica o quanto cada canal
+        contribui para a energia induzida.
+    """
+
     surface: GramEnergySurface
     used_similarity: torch.Tensor
     channel_usage: torch.Tensor
@@ -65,7 +98,7 @@ def activation_to_spatial_field(activation: torch.Tensor) -> tuple[torch.Tensor,
     return activation.detach().float().flatten(1).T, grid
 
 
-def gaussian_blur(field: torch.Tensor, sigma: float) -> torch.Tensor:
+def _gaussian_blur(field: torch.Tensor, sigma: float) -> torch.Tensor:
     if sigma <= 0:
         return field
     radius = max(1, int(4 * sigma + 0.5))
@@ -109,7 +142,7 @@ def gram_induced_energy_surface(
     raw = (coeffs.square() * eigenvalues.pow(power).unsqueeze(0)).sum(dim=1)
     mapped = raw.reshape(grid)
     if smooth_sigma is not None:
-        mapped = gaussian_blur(mapped, smooth_sigma)
+        mapped = _gaussian_blur(mapped, smooth_sigma)
     coords = coeffs * eigenvalues.pow(power / 2).unsqueeze(0)
     return GramEnergySurface(
         field=mapped,
@@ -237,9 +270,9 @@ def orthogonal_energy_surface(
     total_energy_map = total_energy.reshape(grid)
 
     if smooth_sigma is not None and smooth_sigma > 0:
-        perp_energy_map = gaussian_blur(perp_energy_map, smooth_sigma)
-        perp_ratio_map = gaussian_blur(perp_ratio_map, smooth_sigma)
-        total_energy_map = gaussian_blur(total_energy_map, smooth_sigma)
+        perp_energy_map = _gaussian_blur(perp_energy_map, smooth_sigma)
+        perp_ratio_map = _gaussian_blur(perp_ratio_map, smooth_sigma)
+        total_energy_map = _gaussian_blur(total_energy_map, smooth_sigma)
 
     return OrthogonalEnergySurface(
         perp_energy=perp_energy_map,

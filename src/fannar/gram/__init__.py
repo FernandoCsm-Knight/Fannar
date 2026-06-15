@@ -1,11 +1,23 @@
 """Núcleo geométrico: matrizes de Gram e operações sobre o RKHS."""
 
 from .contraction import spectral_contract
-from .distance import distance_matrix
+from .distance import (
+    affinity_from_distance,
+    cumulative_tensor_distances,
+    distance_matrix,
+    distance_to_ref,
+    level_crossing_matrix,
+    level_density,
+    level_set,
+    pairwise_sq_dists,
+    sentence_distance_matrix,
+)
 from .eigenspace import (
+    classical_mds,
     eigendecompose,
     embedding_fidelity,
     energy_decomposition,
+    kernel_pca,
     principal_subspace,
     select_rank,
     spectral_coordinates,
@@ -23,8 +35,18 @@ __all__ = [
     "TensorGram",
     "hadamard_combine",
     "hadamard_combine_log",
+    "pairwise_sq_dists",
+    "affinity_from_distance",
+    "cumulative_tensor_distances",
     "distance_matrix",
+    "sentence_distance_matrix",
+    "level_crossing_matrix",
+    "distance_to_ref",
+    "level_set",
+    "level_density",
+    "classical_mds",
     "eigendecompose",
+    "kernel_pca",
     "principal_subspace",
     "select_rank",
     "energy_decomposition",

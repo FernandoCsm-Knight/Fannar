@@ -12,6 +12,16 @@ from ..config import get_config
 from ..types import SpectralDecomposition
 
 
+def squared_distances(x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+    """Distâncias quadradas euclidianas par a par ``(n, m)``, numericamente estáveis.
+
+    Usa a identidade ``||xᵢ - yⱼ||² = ||xᵢ||² - 2xᵢ·yⱼ + ||yⱼ||²``.
+    """
+    x_sq = (x * x).sum(1, keepdim=True)
+    y_sq = (y * y).sum(1, keepdim=True)
+    return (x_sq - 2.0 * (x @ y.T) + y_sq.T).clamp_min(0.0)
+
+
 def symmetrize(K: torch.Tensor) -> torch.Tensor:
     """Retorna ``(K + Kᵀ) / 2``."""
     return 0.5 * (K + K.transpose(-1, -2))

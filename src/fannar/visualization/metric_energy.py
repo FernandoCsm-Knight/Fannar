@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import torch
 import torch.nn.functional as F
 
-from fannar.concepts.metric_energy import GramEnergySurface, OrthogonalEnergySurface, suppress_borders
+from ..concepts.metric_energy import GramEnergySurface, OrthogonalEnergySurface, suppress_borders
 
 
 def image_to_hwc(image: torch.Tensor) -> torch.Tensor:

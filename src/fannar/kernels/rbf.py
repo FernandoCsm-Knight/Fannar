@@ -4,15 +4,8 @@ from __future__ import annotations
 
 import torch
 
+from ..utils.linalg import squared_distances
 from .base import BaseKernel
-
-
-def squared_distances(x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
-    """Distâncias quadradas par a par ``(n, m)`` de forma numericamente estável."""
-    x_sq = (x * x).sum(1, keepdim=True)  # (n,1)
-    y_sq = (y * y).sum(1, keepdim=True)  # (m,1)
-    d2 = x_sq - 2.0 * (x @ y.T) + y_sq.T
-    return d2.clamp_min(0.0)
 
 
 class RBFKernel(BaseKernel):

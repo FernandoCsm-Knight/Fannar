@@ -2,7 +2,7 @@
 
 Núcleo matemático: kernels -> matrizes de Gram -> transformações pós-kernel ->
 produto tensorial (Hadamard) -> decomposição espectral -> energia induzida por
-Gram no espaço de representação -> curvas de nível, subconceitos e diagnósticos.
+Gram no espaço de representação -> curvas de nível e diagnósticos.
 """
 
 from __future__ import annotations
@@ -10,7 +10,6 @@ from __future__ import annotations
 __version__ = "0.1.0"
 
 # Config
-from .concepts import ConceptBank
 from .config import FannarConfig, get_config, set_config
 
 # Diagnósticos
@@ -90,8 +89,6 @@ __all__ = [
     # pipelines
     "KernelPipeline", "LayerPipeline", "LayerRepresentations", "ModelPipeline",
     "default_layer_pipeline",
-    # concepts
-    "ConceptBank",
     # types
     "SpectralDecomposition", "PrincipalSubspace", "EnergyDecomposition",
     "ExplanatoryProfile", "LayerGeometry",

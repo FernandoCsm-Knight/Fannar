@@ -16,7 +16,7 @@ from ..types import (
     PrincipalSubspace,
     SpectralDecomposition,
 )
-from ..utils.linalg import eigh_descending
+from ..utils.linalg import eigh_descending, squared_distances as _sq_dists
 
 
 def eigendecompose(K: torch.Tensor, descending: bool = True) -> SpectralDecomposition:
@@ -144,6 +144,73 @@ def spectral_coordinates(K: torch.Tensor, dim: int = 2) -> torch.Tensor:
     lam = dec.eigenvalues.clamp_min(0.0)[:dim]
     V = dec.eigenvectors[:, :dim]
     return V * lam.sqrt().unsqueeze(0)
+
+
+def kernel_pca(
+    K: torch.Tensor, n_components: int = 2
+) -> tuple[torch.Tensor, torch.Tensor, float]:
+    """Kernel PCA centralizado: H K H onde H = I - 11ᵀ/n.
+
+    Returns
+    -------
+    coords : (n, n_components)  coordenadas √λ v
+    eigvals : (n,)              autovalores de H K H (decrescentes, ≥ 0)
+    explained : float           fração de energia espectral nos n_components modos
+    """
+    n = K.shape[0]
+    dtype = K.dtype
+    device = K.device
+    H = torch.eye(n, dtype=dtype, device=device) - torch.ones(n, n, dtype=dtype, device=device) / n
+    Kc = H @ K @ H
+    dec = eigendecompose(Kc, descending=True)
+    lam = dec.eigenvalues.clamp_min(0.0)
+    coords = dec.eigenvectors[:, :n_components] * lam[:n_components].sqrt().unsqueeze(0)
+    total = lam.sum().clamp_min(torch.finfo(dtype).tiny)
+    explained = float(lam[:n_components].sum() / total)
+    return coords, lam, explained
+
+
+def classical_mds(
+    D: torch.Tensor, n_components: int = 2
+) -> tuple[torch.Tensor, float]:
+    """MDS clássico: projeção em ``n_components`` dimensões + stress de Kruskal.
+
+    Aplica dupla centralização a ``D²`` (equivalente a kernel_pca sobre a Gram
+    implícita do MDS), decompõe espectralmente e retorna coordenadas √λ v.
+
+    .. math::
+        B = -\\tfrac{1}{2} H D^2 H, \\quad H = I - \\tfrac{1}{n}\\mathbf{1}\\mathbf{1}^\\top
+
+    Stress de Kruskal:
+
+    .. math::
+        \\text{stress} = \\sqrt{\\frac{\\sum_{i<j}(d_{ij} - \\hat{d}_{ij})^2}{\\sum_{i<j} d_{ij}^2}}
+
+    Parameters
+    ----------
+    D            : (n, n) matriz de distâncias simétrica.
+    n_components : dimensão da projeção (padrão 2).
+
+    Returns
+    -------
+    coords : (n, n_components)  coordenadas MDS.
+    stress : float              Kruskal stress-1 ∈ [0, 1].
+    """
+    n = D.shape[0]
+    dtype, device = D.dtype, D.device
+    H = torch.eye(n, dtype=dtype, device=device) - torch.ones(n, n, dtype=dtype, device=device) / n
+    B = -0.5 * H @ D.pow(2) @ H
+    dec = eigendecompose(B, descending=True)
+    lam = dec.eigenvalues.clamp_min(0.0)
+    coords = dec.eigenvectors[:, :n_components] * lam[:n_components].sqrt().unsqueeze(0)
+
+    D_proj = _sq_dists(coords, coords).clamp_min(0.0).sqrt()
+    D_proj.fill_diagonal_(0.0)
+    num = (D - D_proj).pow(2).sum()
+    den = D.pow(2).sum().clamp_min(torch.finfo(dtype).tiny)
+    stress = float((num / den).clamp_min(0.0).sqrt())
+
+    return coords, stress
 
 
 def embedding_fidelity(K: torch.Tensor, dim: int = 2) -> float:
