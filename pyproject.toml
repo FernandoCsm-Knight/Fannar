@@ -28,7 +28,6 @@ dev = [
     "pytest>=9.1.0",
     "pytest-cov>=7.1.0",
     "hypothesis>=6.155.2",
-    "ruff>=0.15.17",
     "mypy>=2.1.0",
 ]
 all = ["fannar[viz,sci,dev]"]
@@ -39,18 +38,6 @@ Repository = "https://example.com/fannar"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/fannar"]
-
-[tool.ruff]
-line-length = 110
-target-version = "py310"
-src = ["src", "tests"]
-
-[tool.ruff.lint]
-select = ["E", "F", "I", "B", "UP", "SIM"]
-ignore = ["E741", "ARG001", "ARG002", "ARG003"]  # i,j,l comuns; args de interface/protocolo
-
-[tool.ruff.lint.per-file-ignores]
-"tests/*" = ["ARG", "B", "E501"]
 
 [tool.mypy]
 python_version = "3.10"
