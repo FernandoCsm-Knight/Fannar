@@ -1,0 +1,70 @@
+% Compilar com:  latexmk -pdf main.tex
+%
+% Os pacotes que nao vem no texlive-latex-base (babel-portuges, algorithms, algorithmicx,
+% multirow, booktabs, xcolor, enumitem, caption, float) foram instalados em ~/texmf com
+% `tlmgr --usermode`, a partir do arquivo historico do TeX Live 2021.
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[brazil]{babel}
+\usepackage{mathptmx}          % Times: as figuras usam Nimbus Roman, o clone metrico do Times
+\usepackage[a4paper,margin=2.5cm]{geometry}
+
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{graphicx}
+\usepackage{multirow}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{float}
+\usepackage[font=small,labelfont=bf]{caption}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{xcolor}
+\usepackage[square,authoryear]{natbib}
+\usepackage{url}
+\usepackage[hidelinks]{hyperref}
+
+\graphicspath{{./}}
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Teorema}[section]
+\newtheorem{proposition}[theorem]{Proposição}
+\newtheorem{corollary}[theorem]{Corolário}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definição}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Comentário}
+
+\floatname{algorithm}{Algoritmo}
+
+\title{\textbf{Fannar}: Interpretabilidade Mecanicista por Tensores de Similaridade em Espaços de Hilbert com Núcleo Reprodutor}
+\author{%
+  \begin{tabular}{c}
+    Fernando C. S. Dal'Maria \quad Cristiane N. Nobre \quad Pedro Belchior\\[4pt]
+    \small Instituto de Ciências Exatas e Informática\\
+    \small Pontifícia Universidade Católica de Minas Gerais (PUC Minas), Belo Horizonte, MG, Brasil
+  \end{tabular}}
+\date{}
+
+\begin{document}
+\maketitle
+
+\input{introduction}
+\input{background}
+\input{related_work}
+\input{theory}
+\input{gram}
+\input{distance}
+\input{metodologia}
+\input{resultados}
+\input{discussao}
+
+\bibliographystyle{plainnat}
+\bibliography{referencias}
+
+% O apendice ainda contem tabelas da versao anterior (CIFAR-10) e fica fora da compilacao
+% ate ser refeito com os experimentos atuais; nenhum texto do corpo faz referencia a ele.
+% \input{apendice}
+
+\end{document}

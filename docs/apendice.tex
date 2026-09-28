@@ -1,0 +1,195 @@
+\appendix
+
+\section{Valores numéricos dos resultados}\label{sec:apendice_tabelas}
+
+% PENDENTE (2026-09-25): as tabelas deste apendice ainda sao as da rodada preliminar
+% (CIFAR-10 e Cat/Dog, uma unica semente) e precisam ser regeradas a partir de
+% `outputs/tabular_suite/tables_fixed.md`, `outputs/pets_suite/tables_fixed.md`,
+% `outputs/pets_regions/tables.md` e `outputs/tabular_differences/tables.md`.
+Este apêndice reúne os valores numéricos das leituras apresentadas na Seção \ref{sec:resultados}, por bloco da rede.
+
+\begin{table}[htbp]
+\centering
+\caption{Leituras da matriz de distância referidas ao comportamento da rede, por bloco. O piso é o controle cruzado: a geometria da rede não treinada medida contra o comportamento da rede treinada.}
+\label{tab:res_distancia}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llccccccc}
+\hline
+Leitura & Representação & \texttt{stem} & \texttt{b1} & \texttt{b2} & \texttt{b3} & \texttt{b4} & \texttt{b5} & \texttt{b6} \\
+\hline
+\multirow{5}{*}{$k$-vizinhos contra a predição} & Gram conjunta & 0,296 & 0,512 & 0,644 & 0,856 & 0,946 & 1,000 & 1,000 \\
+ & Gradiente ($\Gamma$) & 0,178 & 0,384 & 0,530 & 0,800 & 0,932 & 1,000 & 1,000 \\
+ & Ativações ($A$) & 0,288 & 0,382 & 0,524 & 0,580 & 0,704 & 0,918 & 0,984 \\
+ & RSA euclidiana & 0,264 & 0,374 & 0,484 & 0,564 & 0,636 & 0,768 & 0,986 \\
+ & Piso cruzado & 0,300 & 0,302 & 0,294 & 0,310 & 0,306 & 0,272 & 0,254 \\
+\hline
+\multirow{5}{*}{AUC da margem para o acerto} & Gram conjunta & 0,580 & 0,764 & 0,834 & 0,879 & 0,982 & 1,000 & 1,000 \\
+ & Gradiente ($\Gamma$) & 0,659 & 0,783 & 0,870 & 0,939 & 0,980 & 1,000 & 1,000 \\
+ & Ativações ($A$) & 0,556 & 0,590 & 0,642 & 0,712 & 0,764 & 0,937 & 0,999 \\
+ & RSA euclidiana & 0,503 & 0,524 & 0,593 & 0,635 & 0,695 & 0,805 & 0,999 \\
+ & Piso cruzado & 0,562 & 0,554 & 0,552 & 0,535 & 0,534 & 0,523 & 0,520 \\
+\hline
+\multirow{5}{*}{Spearman com a confusão} & Gram conjunta & 0,375 & 0,292 & 0,366 & 0,243 & 0,426 & 0,575 & 0,742 \\
+ & Gradiente ($\Gamma$) & $-$0,005 & 0,009 & $-$0,094 & $-$0,103 & $-$0,090 & 0,173 & 0,775 \\
+ & Ativações ($A$) & 0,418 & 0,329 & 0,366 & 0,282 & 0,506 & 0,634 & 0,635 \\
+ & RSA euclidiana & 0,444 & 0,491 & 0,363 & 0,298 & 0,488 & 0,435 & 0,516 \\
+ & Piso cruzado & 0,101 & 0,060 & 0,092 & 0,089 & 0,095 & 0,085 & 0,078 \\
+\hline
+\end{tabular}}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{Leituras espectrais por bloco. A contenção é a fração das direções de classe dentro de $V_r$; o coeficiente de variação (CV) e a AUC referem-se à razão de energia ortogonal $\widehat{E}_{\mathrm{ratio}}$. O controle é a Gram conjunta da rede não treinada.}
+\label{tab:res_espectro}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llccccccc}
+\hline
+Leitura & Representação & \texttt{stem} & \texttt{b1} & \texttt{b2} & \texttt{b3} & \texttt{b4} & \texttt{b5} & \texttt{b6} \\
+\hline
+\multirow{4}{*}{Contenção das classes em $V_r$} & Gram conjunta & 0,440 & 0,625 & 0,647 & 0,838 & 0,873 & 0,916 & 0,915 \\
+ & Gradiente ($\Gamma$) & 0,313 & 0,451 & 0,422 & 0,608 & 0,747 & 0,890 & 0,903 \\
+ & Ativações ($A$) & 0,138 & 0,265 & 0,306 & 0,493 & 0,599 & 0,787 & 0,871 \\
+ & Controle & 0,146 & 0,136 & 0,122 & 0,087 & 0,071 & 0,062 & 0,032 \\
+\hline
+\multirow{2}{*}{CV de $\widehat{E}_{\mathrm{ratio}}$} & Gram conjunta & 0,066 & 0,058 & 0,055 & 0,103 & 0,087 & 0,140 & 0,400 \\
+ & Controle & 0,225 & 0,237 & 0,259 & 0,329 & 0,351 & 0,400 & 0,435 \\
+\hline
+\multirow{4}{*}{AUC de $\widehat{E}_{\mathrm{ratio}}$ para o erro} & Gram conjunta & 0,523 & 0,404 & 0,540 & 0,581 & 0,528 & 0,687 & 0,811 \\
+ & Gradiente ($\Gamma$) & 0,369 & 0,371 & 0,338 & 0,236 & 0,181 & 0,316 & 0,893 \\
+ & Ativações ($A$) & 0,472 & 0,510 & 0,593 & 0,556 & 0,548 & 0,795 & 0,737 \\
+ & Controle & 0,555 & 0,550 & 0,567 & 0,544 & 0,550 & 0,556 & 0,605 \\
+\hline
+\end{tabular}}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{Fração de predições alteradas pela intervenção em cada bloco, para diferentes orçamentos relativos $\sigma$.}
+\label{tab:res_flip}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lccccccc}
+\hline
+Orçamento & \texttt{stem} & \texttt{b1} & \texttt{b2} & \texttt{b3} & \texttt{b4} & \texttt{b5} & \texttt{b6} \\
+\hline
+$\sigma = 1$ & 0,110 & 0,058 & 0,026 & 0,032 & 0,024 & 0,026 & 0,004 \\
+$\sigma = 2$ & 0,422 & 0,216 & 0,150 & 0,350 & 0,098 & 0,058 & 0,008 \\
+$\sigma = 4$ & 0,880 & 0,716 & 0,722 & 0,826 & 0,790 & 0,234 & 0,012 \\
+Não treinada, $\sigma = 2$ & 0,210 & 0,208 & 0,214 & 0,212 & 0,242 & 0,118 & 0,146 \\
+\hline
+\end{tabular}}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{Decomposição da Gram do método contra a Gram das ativações da mesma camada. As duas últimas leituras tratam cada parte da decomposição como uma geometria própria, após a projeção no cone semidefinido positivo.}
+\label{tab:res_cka}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llccccccc}
+\hline
+Leitura & Representação & \texttt{stem} & \texttt{b1} & \texttt{b2} & \texttt{b3} & \texttt{b4} & \texttt{b5} & \texttt{b6} \\
+\hline
+\multirow{4}{*}{Alinhamento $a$} & Ativações ($A$), âncora & 0,977 & 0,985 & 0,995 & 0,992 & 0,994 & 0,937 & 0,987 \\
+ & Parâmetros ($W$) & 0,893 & 0,961 & 0,959 & 0,970 & 0,962 & 0,918 & 0,965 \\
+ & Gram conjunta & 0,700 & 0,467 & 0,579 & 0,691 & 0,676 & 0,843 & 0,932 \\
+ & Gradiente ($\Gamma$) & 0,089 & 0,155 & 0,152 & 0,246 & 0,301 & 0,595 & 0,867 \\
+\hline
+\multirow{2}{*}{$k$-vizinhos contra a predição} & Parte vista pela CKA & 0,264 & 0,374 & 0,484 & 0,564 & 0,636 & 0,768 & 0,986 \\
+ & Parte residual & 0,202 & 0,334 & 0,482 & 0,652 & 0,858 & 0,886 & 1,000 \\
+\hline
+\multirow{2}{*}{AUC da margem para o acerto} & Parte vista pela CKA & 0,503 & 0,524 & 0,593 & 0,635 & 0,695 & 0,805 & 0,999 \\
+ & Parte residual & 0,658 & 0,802 & 0,815 & 0,857 & 0,929 & 0,990 & 1,000 \\
+\hline
+Massa espectral descartada & Parte residual & 0,034 & 0,022 & 0,025 & 0,039 & 0,064 & 0,147 & 0,482 \\
+\hline
+\end{tabular}}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{Diferença entre as áreas sob a curva da margem normalizada ao remover os píxeis do menos para o mais relevante e do mais para o menos relevante, por bloco. Nas duas primeiras leituras a relevância é a energia do campo; na última, a proximidade a $s_0$. O piso cruzado é a mesma ordenação calculada na rede não treinada e aplicada à rede treinada; a ordem aleatória resulta em $0{,}001$ no CIFAR-10 e em $0{,}006$ na base de gatos e cachorros. Em \texttt{b6} o campo do gradiente isolado é indefinido.}
+\label{tab:res_campo}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llccccccc}
+\hline
+Leitura & Representação & \texttt{stem} & \texttt{b1} & \texttt{b2} & \texttt{b3} & \texttt{b4} & \texttt{b5} & \texttt{b6} \\
+\hline
+\multirow{6}{*}{Campo de energia, CIFAR-10} & Gram conjunta & 0,181 & 0,220 & 0,264 & 0,299 & 0,323 & 0,361 & 0,159 \\
+ & Ativações ($A$) & 0,146 & 0,148 & 0,150 & 0,177 & 0,232 & 0,398 & 0,196 \\
+ & Parâmetros ($W$) & 0,139 & 0,106 & 0,122 & 0,188 & 0,244 & 0,396 & 0,081 \\
+ & Gradiente ($\Gamma$) & 0,103 & 0,211 & 0,239 & 0,304 & 0,289 & 0,303 & -- \\
+ & Grad-CAM & 0,002 & 0,020 & $-$0,025 & 0,057 & 0,050 & 0,171 & 0,422 \\
+ & Piso cruzado & 0,074 & 0,060 & 0,051 & 0,066 & 0,065 & 0,043 & 0,023 \\
+\hline
+\multirow{6}{*}{Campo de energia, gatos e cachorros} & Gram conjunta & 0,290 & 0,386 & 0,327 & 0,315 & 0,580 & 0,522 & 0,279 \\
+ & Ativações ($A$) & 0,058 & 0,136 & 0,155 & 0,222 & 0,459 & 0,295 & 0,302 \\
+ & Parâmetros ($W$) & 0,066 & 0,143 & 0,199 & 0,293 & 0,556 & 0,329 & 0,262 \\
+ & Gradiente ($\Gamma$) & 0,328 & 0,392 & 0,381 & 0,380 & 0,435 & 0,251 & -- \\
+ & Grad-CAM & $-$0,093 & $-$0,080 & 0,020 & 0,154 & 0,319 & 0,558 & 0,896 \\
+ & Piso cruzado & 0,221 & 0,202 & 0,226 & 0,223 & 0,197 & 0,057 & 0,025 \\
+\hline
+\multirow{3}{*}{Distância a $s_0$, gatos e cachorros} & Pseudodistância original & $-$0,157 & $-$0,147 & $-$0,075 & $-$0,112 & $-$0,332 & 0,162 & 0,935 \\
+ & Distância angular & $-$0,029 & 0,120 & 0,214 & $-$0,042 & 0,695 & 0,630 & 0,677 \\
+ & Piso cruzado (angular) & 0,176 & 0,180 & 0,190 & 0,143 & 0,145 & 0,080 & 0,086 \\
+\hline
+\end{tabular}}
+\end{table}
+
+\section{Diagnósticos da variante com raiz $d$-ésima}\label{sec:apendice_raiz}
+
+Esta seção reúne os diagnósticos da variante da Equação \eqref{eq:raiz}, em que o produto de Hadamard das componentes é substituído pela sua média geométrica. Esses diagnósticos não testam a proposição do trabalho, mas verificam se a variante se comporta como a teoria prevê e em quais leituras ela deve ser utilizada. A Tabela \ref{tab:apendice_raiz} reúne os valores discutidos a seguir.
+
+\begin{table}[htbp]
+\centering
+\caption{Comparação entre a Gram conjunta pelo produto de Hadamard e pela raiz $d$-ésima, por bloco.}
+\label{tab:apendice_raiz}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llccccccc}
+\hline
+Quantidade & Composição & \texttt{stem} & \texttt{b1} & \texttt{b2} & \texttt{b3} & \texttt{b4} & \texttt{b5} & \texttt{b6} \\
+\hline
+\multirow{5}{*}{Mediana fora da diagonal} & Componente $A$ & 0,905 & 0,920 & 0,892 & 0,765 & 0,781 & 0,620 & 0,621 \\
+ & Componente $W$ & 0,827 & 0,926 & 0,870 & 0,809 & 0,832 & 0,698 & 0,761 \\
+ & Componente $\Gamma$ & 0,500 & 0,501 & 0,502 & 0,504 & 0,509 & 0,559 & 0,445 \\
+ & Produto & 0,370 & 0,424 & 0,387 & 0,309 & 0,329 & 0,238 & 0,210 \\
+ & Raiz & 0,718 & 0,751 & 0,729 & 0,676 & 0,690 & 0,620 & 0,594 \\
+\hline
+Spearman entre as distâncias & Produto e raiz & 0,9992 & 0,9988 & 0,9990 & 1,0000 & 0,9998 & 1,0000 & 1,0000 \\
+\hline
+\multirow{2}{*}{Violação da semidefinição positiva} & Massa espectral negativa & 0,51\% & 0,37\% & 0,41\% & 0,003\% & 0,04\% & 0 & 0 \\
+ & Autovalores negativos & 125 & 101 & 110 & 2 & 10 & 0 & 0 \\
+\hline
+\multirow{2}{*}{Modos ativos $r$} & Produto & 132 & 193 & 169 & 243 & 204 & 88 & 16 \\
+ & Raiz & 73 & 130 & 105 & 145 & 122 & 49 & 13 \\
+\hline
+\multirow{2}{*}{Fidelidade da projeção 2D} & Produto & 0,076 & 0,040 & 0,052 & 0,038 & 0,042 & 0,095 & 0,186 \\
+ & Raiz & 0,112 & 0,052 & 0,071 & 0,057 & 0,059 & 0,134 & 0,211 \\
+\hline
+\multirow{2}{*}{Energia de classe (múltiplo do acaso)} & Produto & 2,3 & 2,1 & 2,7 & 2,9 & 4,0 & 13,6 & 38,1 \\
+ & Raiz & 2,8 & 2,4 & 3,2 & 3,7 & 5,1 & 18,4 & 42,3 \\
+\hline
+\multirow{2}{*}{Contenção das classes em $V_r$} & Produto & 0,440 & 0,625 & 0,647 & 0,838 & 0,873 & 0,916 & 0,915 \\
+ & Raiz & 0,289 & 0,504 & 0,506 & 0,706 & 0,800 & 0,897 & 0,912 \\
+\hline
+\multirow{2}{*}{Silhueta} & Produto & $-$0,007 & $-$0,001 & 0,002 & 0,007 & 0,018 & 0,111 & 0,439 \\
+ & Raiz & $-$0,010 & $-$0,001 & 0,003 & 0,009 & 0,025 & 0,153 & 0,505 \\
+\hline
+\multirow{2}{*}{Spearman com a confusão} & Produto & 0,375 & 0,292 & 0,366 & 0,243 & 0,426 & 0,575 & 0,742 \\
+ & Raiz & 0,342 & 0,284 & 0,326 & 0,220 & 0,394 & 0,562 & 0,697 \\
+\hline
+\end{tabular}}
+\end{table}
+
+O encolhimento multiplicativo previsto no Comentário \ref{rem:joint_similarity} é observado diretamente. Com componentes cujas medianas fora da diagonal ficam entre $0{,}45$ e $0{,}93$, o produto das três resulta em medianas entre $0{,}21$ e $0{,}42$, e a raiz devolve esses valores à escala das componentes, entre $0{,}59$ e $0{,}75$. Esse encolhimento é a causa direta do elevado número de modos ativos e da baixa fidelidade da projeção discutidos na Subseção \ref{subsec:res_instanciacao}.
+
+A correlação de Spearman entre as distâncias do produto e as da raiz é de no mínimo $0{,}9988$, o que confirma que a raiz preserva a ordenação das distâncias. Sendo assim, nenhuma leitura baseada em postos, como $k$-vizinhos, área sob a curva ROC e correlações de Spearman, pode ser alterada de forma relevante pela raiz, e a estabilidade dessas leituras sob a variante não constitui evidência a seu favor.
+
+Quanto à semidefinição positiva, a potência de Hadamard fracionária não é garantida pelo teorema de Schur. Pelo resultado de \citet{FitzGeraldHorn1977}, $\mathbf{A}^{\circ p}$ é semidefinida positiva para toda matriz semidefinida positiva de entradas não negativas de ordem $n$ se e somente se $p \geq n-2$ ou $p$ é inteiro, e com $p = 1/3$ e $n = 500$ essa garantia não existe. A violação medida, entretanto, é pequena: a massa espectral negativa é de no máximo 0,51\% nos blocos rasos, com menor autovalor de $-0{,}068$, e desaparece a partir de \texttt{b5}, em que a matriz resultante já é semidefinida positiva sem nenhuma projeção.
+
+As quantidades que dependem dos valores das entradas, e não da sua ordenação, são as que a raiz de fato altera. O número de modos ativos cai entre 19\% e 45\%, a fidelidade da projeção em duas dimensões aumenta entre 13\% e 50\% em termos relativos, a energia de classe aumenta entre 11\% e 35\% e a silhueta em \texttt{b6} passa de $0{,}439$ para $0{,}505$. Por outro lado, a raiz reduz a contenção das direções de classe em $V_r$ em todos os blocos, sobretudo nos rasos ($0{,}440$ para $0{,}289$ em \texttt{stem}), e reduz levemente a concordância com a confusão, de $0{,}742$ para $0{,}697$ em \texttt{b6}. Veja que a contenção depende de $V_r$ e, portanto, do número de modos retidos, que é justamente o que a raiz modifica.
+
+Sendo assim, a variante com raiz é recomendada quando a afirmação é espectral ou visual, como na análise da energia por modo e na produção de dispersogramas, enquanto o produto de Hadamard deve ser mantido nas leituras de comportamento e de contenção, que são as leituras sancionadas pela teoria sem ressalvas.
+
+\section{Verificação da energia na Gram bruta e na Gram transformada}\label{sec:apendice_bruta}
+
+A aritmética da energia espectral é exata para qualquer matriz simétrica, mas a transformação $T$ altera o objeto cuja norma está sendo medida. Na Gram bruta, a energia de cada amostra é a norma no RKHS no sentido estrito, mas a normalização angular fixa essa norma em 1 para todas as amostras, e por isso a razão $\widehat{E}_{\mathrm{ratio}}$ só é informativa por medir direção, e não magnitude. Duas propriedades foram verificadas. A primeira é que o alinhamento espectral com a classe, como múltiplo do acaso, é idêntico nas duas matrizes em todos os blocos, visto que o vetor de classe centrado satisfaz $y^\top H \mathbf{G} H y = y^\top \mathbf{G} y$ e a constante de traço cancela contra o piso. A segunda é que o número de modos ativos difere radicalmente entre as duas matrizes (entre 5 e 14 na Gram bruta, contra 16 a 243 na transformada), porque, na Gram bruta, o deslocamento sem centramento faz com que o modo dominante seja o vetor constante, e a razão de participação passa a contar esse modo trivial. Esse resultado justifica a aplicação do centramento antes da leitura espectral.

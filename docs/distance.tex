@@ -1,0 +1,351 @@
+
+\section{Distâncias e Propriedades Geométricas no Espaço de Representação}
+\label{sec:representation_geometry}
+
+O pipeline núcleo-transformação associa a um conjunto finito de objetos uma
+matriz simétrica semidefinida positiva
+\begin{equation}\label{eq:transformed_gram_geometry}
+    \mathbf{G}
+    =
+    T(\widetilde{\mathbf{G}})
+    \in
+    \mathbb{S}_+^n.
+\end{equation}
+Essa matriz determina uma geometria empírica sobre as representações
+analisadas. De fato, como $\mathbf{G}$ é semidefinida positiva, existem um
+espaço de Hilbert $\mathcal{E}$ e vetores
+$\varphi_1,\dots,\varphi_n\in\mathcal{E}$ tais que
+\begin{equation}\label{eq:empirical_feature_realization}
+    G_{ij}
+    =
+    \langle
+        \varphi_i,
+        \varphi_j
+    \rangle_{\mathcal{E}}.
+\end{equation}
+
+A representação explícita dos vetores $\varphi_i$ não é necessária. Seus
+produtos internos, normas e distâncias podem ser obtidos diretamente a
+partir de $\mathbf{G}$. Desse modo, objetos pertencentes a espaços de
+representação possivelmente heterogêneos ou sem uma métrica previamente
+especificada passam a admitir uma geometria mensurável no espaço de
+características induzido pelo pipeline.
+
+Essa geometria não deve ser interpretada como uma propriedade intrínseca e
+única do domínio original. Ela depende da função núcleo e da transformação
+pós-\textit{kernel} adotadas. Diferentes pipelines podem, portanto, induzir
+diferentes noções de proximidade entre os mesmos objetos, de acordo com as
+propriedades geométricas preservadas ou descartadas em cada construção.
+
+\subsection{Pseudométrica induzida pela matriz de Gram}
+\label{subsec:gram_pseudometric}
+
+A distância entre as representações dos objetos $i$ e $j$ é definida pela
+norma da diferença no espaço de características:
+\begin{equation}\label{eq:induced_distance}
+    d_{\mathbf{G}}(i,j)
+    =
+    \|
+        \varphi_i-\varphi_j
+    \|_{\mathcal{E}}.
+\end{equation}
+Expandindo a norma e utilizando \eqref{eq:empirical_feature_realization},
+obtém-se
+\begin{equation}\label{eq:gram_distance}
+    d_{\mathbf{G}}^2(i,j)
+    =
+    G_{ii}
+    +
+    G_{jj}
+    -
+    2G_{ij}.
+\end{equation}
+
+A matriz de distâncias associada a $\mathbf{G}$ é
+\begin{equation}\label{eq:distance_matrix}
+    \mathbf{D}_{\mathbf{G}}
+    =
+    \left(
+        d_{\mathbf{G}}(i,j)
+    \right)_{i,j=1}^{n}.
+\end{equation}
+Por construção, $\mathbf{D}_{\mathbf{G}}$ é simétrica, possui diagonal
+nula e satisfaz a desigualdade triangular.
+
+Em geral, $d_{\mathbf{G}}$ é uma pseudométrica sobre o conjunto de índices
+dos objetos. É possível que dois objetos distintos satisfaçam
+\begin{equation}\label{eq:zero_pseudodistance}
+    d_{\mathbf{G}}(i,j)
+    =
+    0,
+    \qquad
+    i\neq j,
+\end{equation}
+quando suas representações coincidem no espaço induzido:
+\begin{equation*}
+    \varphi_i
+    =
+    \varphi_j.
+\end{equation*}
+Essa possibilidade não constitui uma deficiência da construção. Ela
+expressa que o pipeline considera os dois objetos indistinguíveis segundo
+a noção de similaridade adotada.
+
+\begin{proposition}[Propriedades da distância induzida]
+\label{prop:induced_pseudometric}
+A função
+\begin{equation*}
+    d_{\mathbf{G}}:
+    \{1,\dots,n\}
+    \times
+    \{1,\dots,n\}
+    \longrightarrow
+    \mathbb{R}_{\geq 0}
+\end{equation*}
+definida em \eqref{eq:induced_distance} satisfaz:
+\begin{enumerate}
+    \item $d_{\mathbf{G}}(i,j)\geq 0$,
+    \item $d_{\mathbf{G}}(i,j)=d_{\mathbf{G}}(j,i)$,
+    \item $d_{\mathbf{G}}(i,i)=0$,
+    \item $d_{\mathbf{G}}(i,k) \leq d_{\mathbf{G}}(i,j) + d_{\mathbf{G}}(j,k)$.
+
+\end{enumerate}
+Além disso,
+\begin{equation}
+    d_{\mathbf{G}}(i,j)
+    =
+    0
+    \iff
+    \varphi_i
+    =
+    \varphi_j.
+\end{equation}
+Consequentemente, $d_{\mathbf{G}}$ é uma pseudométrica sobre os objetos e
+uma métrica sobre as classes de equivalência induzidas por representações
+coincidentes.
+\end{proposition}
+
+\begin{proof}
+As propriedades de não negatividade, simetria e desigualdade triangular
+decorrem diretamente do fato de que $d_{\mathbf{G}}$ é obtida pela norma
+de um espaço de Hilbert. Além disso,
+\begin{equation*}
+    d_{\mathbf{G}}(i,j)
+    =
+    0
+\end{equation*}
+se e somente se
+\begin{equation*}
+    \|
+        \varphi_i-\varphi_j
+    \|_{\mathcal{E}}
+    =
+    0,
+\end{equation*}
+o que ocorre se e somente se
+$\varphi_i=\varphi_j$.
+\end{proof}
+
+\subsection{Equivalência representacional}
+\label{subsec:representational_equivalence}
+
+A pseudométrica induz naturalmente a relação
+\begin{equation}\label{eq:representation_equivalence}
+    i\sim_{\mathbf{G}}j
+    \iff
+    d_{\mathbf{G}}(i,j)=0.
+\end{equation}
+Equivalentemente,
+\begin{equation*}
+    i\sim_{\mathbf{G}}j
+    \iff
+    \varphi_i=\varphi_j.
+\end{equation*}
+Essa relação é reflexiva, simétrica e transitiva e, portanto, particiona o
+conjunto de objetos em classes de equivalência representacional.
+
+Objetos pertencentes à mesma classe não são necessariamente iguais no
+domínio original. Eles são apenas indistinguíveis segundo o espaço de
+representação, o núcleo e a transformação pós-\textit{kernel} escolhidos.
+A equivalência é, portanto, relativa ao pipeline:
+\begin{equation*}
+    \sim_{\mathbf{G}}
+    =
+    \sim_{(\kappa,T)}.
+\end{equation*}
+
+O espaço quociente
+\begin{equation}
+    \{1,\dots,n\}/{\sim_{\mathbf{G}}}
+\end{equation}
+reúne as classes de objetos com representação coincidente. Sobre esse
+quociente, $d_{\mathbf{G}}$ é uma métrica propriamente dita.
+
+\subsection{Geometria relativa da amostra}
+\label{subsec:sample_relative_geometry}
+
+A matriz $\mathbf{D}_{\mathbf{G}}$ reúne a geometria métrica relativa dos
+objetos observados. Suas entradas descrevem como as representações se
+organizam umas em relação às outras, sem exigir acesso às suas coordenadas
+explícitas no espaço de características. Essa estrutura permite analisar
+proximidade, equivalência representacional, vizinhanças, isolamento local e
+agrupamentos, sem exigir que a pseudométrica separe todos os objetos.
+
+\subsubsection*{Vizinhanças induzidas}
+
+Para um objeto de referência $i_0$, a vizinhança de raio
+$\varepsilon\geq 0$ é definida por
+\begin{equation}\label{eq:epsilon_neighborhood}
+    \mathcal{N}_{\varepsilon}(i_0)
+    =
+    \left\{
+        j\in\{1,\dots,n\}
+        :
+        d_{\mathbf{G}}(i_0,j)
+        \leq
+        \varepsilon
+    \right\}.
+\end{equation}
+Alternativamente, pode-se considerar a vizinhança
+$\mathcal{N}_k(i_0)$ formada pelos $k$ objetos mais próximos de $i_0$,
+com respeito a $d_{\mathbf{G}}$.
+
+Essas vizinhanças descrevem a organização local da amostra. Objetos com
+muitos vizinhos a pequenas distâncias ocupam regiões densas no espaço
+induzido, enquanto objetos cujos vizinhos mais próximos permanecem
+distantes ocupam regiões relativamente isoladas. Como
+$d_{\mathbf{G}}$ é uma pseudométrica, uma vizinhança de raio zero pode
+conter mais de um objeto:
+\begin{equation}
+    \mathcal{N}_{0}(i_0)
+    =
+    \left\{
+        j:
+        j\sim_{\mathbf{G}} i_0
+    \right\}.
+\end{equation}
+Assim, $\mathcal{N}_{0}(i_0)$ coincide com a classe de equivalência
+representacional de $i_0$.
+
+\subsubsection*{Conjuntos de nível da distância}
+
+Fixado um objeto de referência $i_0$, define-se a função distância
+\begin{equation}\label{eq:sample_distance_function}
+    p_{i_0}(j)
+    =
+    d_{\mathbf{G}}(i_0,j).
+\end{equation}
+Para cada valor $r\geq 0$, o conjunto de nível associado a $i_0$ é
+\begin{equation}\label{eq:sample_level_set}
+    \Gamma_r(i_0)
+    =
+    \left\{
+        j\in\{1,\dots,n\}
+        :
+        p_{i_0}(j)=r
+    \right\}.
+\end{equation}
+Os elementos de $\Gamma_r(i_0)$ possuem representações equidistantes da
+representação de referência. À medida que $r$ varia, esses conjuntos
+organizam a amostra em camadas de equidistância ao redor de $i_0$.
+
+No caso $r=0$, tem-se
+\begin{equation}
+    \Gamma_0(i_0)
+    =
+    \left\{
+        j:
+        d_{\mathbf{G}}(i_0,j)=0
+    \right\}
+    =
+    [i_0]_{\sim_{\mathbf{G}}},
+\end{equation}
+de modo que o conjunto de nível nulo coincide com a classe de equivalência
+representacional de $i_0$. Para $r>0$, os conjuntos de nível descrevem as
+diferentes escalas de afastamento em relação à referência.
+
+Como o conjunto de objetos é finito, $\Gamma_r(i_0)$ pode ser vazio para
+valores de $r$ que não ocorram entre as entradas da matriz de distâncias.
+Nesse regime, os conjuntos de nível devem ser entendidos como camadas
+discretas da amostra, e não necessariamente como curvas geométricas
+contínuas.
+
+\subsubsection*{Faixas de nível}
+
+Em aplicações empíricas, distâncias exatamente iguais podem ser raras. Para
+obter uma descrição mais estável, podem ser consideradas faixas de nível
+com espessura $\delta>0$:
+\begin{equation}\label{eq:sample_level_band}
+    \Gamma_{r,\delta}(i_0)
+    =
+    \left\{
+        j\in\{1,\dots,n\}
+        :
+        \left|
+            d_{\mathbf{G}}(i_0,j)-r
+        \right|
+        \leq\delta
+    \right\}.
+\end{equation}
+Essas faixas agrupam objetos cujas distâncias à referência pertencem a uma
+mesma escala e constituem uma aproximação empírica dos conjuntos de nível.
+
+Quando os objetos estão associados a posições de um domínio espacial ou
+contínuo, a função distância pode ser avaliada ou interpolada sobre esse
+domínio. Nesse caso, os conjuntos de nível assumem a forma de curvas ou
+superfícies de nível, permitindo visualizar a organização geométrica da
+representação em torno de uma referência. A interpretação dessas curvas
+dependerá da representação e do pipeline empregados na aplicação.
+
+O Algoritmo \ref{alg:geometria} resume o cálculo dessas quantidades a partir
+da matriz de Gram, sem que as representações $\varphi_i$ precisem ser obtidas.
+
+\begin{algorithm}[htbp]
+\caption{Relative geometry induced by the Gram matrix}
+\label{alg:geometria}
+\begin{algorithmic}[1]
+\Require $\mathbf{G} \in \mathbb{S}_+^n$, reference object $i_0$, number of neighbors $k$, radius $r$ and thickness $\delta$
+\Ensure $\mathbf{D}_{\mathbf{G}}$, $\mathcal{N}_k(i_0)$ and $\Gamma_{r,\delta}(i_0)$
+\For{$i, j = 1,\dots,n$}
+    \State $(\mathbf{D}_{\mathbf{G}})_{ij} \gets \sqrt{\max\left(G_{ii} + G_{jj} - 2G_{ij},\, 0\right)}$ \Comment{Equation \eqref{eq:gram_distance}}
+\EndFor
+\State $\mathcal{N}_k(i_0) \gets$ the $k$ objects closest to $i_0$ according to $\mathbf{D}_{\mathbf{G}}$
+\State $\Gamma_{r,\delta}(i_0) \gets \{\, j : |(\mathbf{D}_{\mathbf{G}})_{i_0 j} - r| \leq \delta \,\}$
+\end{algorithmic}
+\end{algorithm}
+\subsection{Custo computacional}\label{subsec:custo}
+
+Esta subseção analisa o custo assintótico dos Algoritmos \ref{alg:pipeline}, \ref{alg:geometria} e \ref{alg:energia}, isto é, do método em si, independentemente da instanciação. O custo de obter as fontes, que depende do modelo analisado, é discutido na Subseção \ref{subsec:reprodutibilidade}. Utiliza-se a notação usual \citep{Cormen2009}: $O(g)$ indica um limite superior, $\Omega(g)$ um limite inferior e $\Theta(g)$ um limite justo, que vale como superior e inferior ao mesmo tempo. Sejam $n$ o número de objetos, $d$ o número de fontes, $c_l$ o custo de avaliar o \textit{kernel} $\kappa_l$ sobre um par de objetos, $r$ o número de modos retidos e $k$ o número de vizinhos. Com \textit{kernels} lineares, angulares ou gaussianos sobre representações de dimensão $D_l$, tem-se $c_l = \Theta(D_l)$, e denota-se $D = \sum_l D_l$.
+
+Veja que os três algoritmos são determinísticos e não tomam decisões que dependam dos valores dos dados: para um mesmo $n$ e uma mesma dimensão das fontes, eles executam sempre as mesmas operações. Por esse motivo, o melhor caso, o pior caso e o caso médio coincidem, e o custo de cada algoritmo pode ser descrito por um limite justo $\Theta$. O limite inferior $\Omega$ é utilizado com outro sentido, o do \textit{problema}: ele indica o mínimo que qualquer algoritmo precisa gastar para produzir a mesma saída, e a distância entre ele e o custo do algoritmo mostra onde há espaço para melhorias.
+
+\textbf{Construção da matriz de Gram.} O Algoritmo \ref{alg:pipeline} avalia o \textit{kernel} de cada fonte sobre os $n(n+1)/2$ pares distintos, o que custa $\Theta(n^2 c_l)$ por fonte e $\Theta(n^2 D)$ no total. As transformações por componente utilizadas neste trabalho, a normalização angular $T_a$, o deslocamento por $\mathbf{J}$, o centramento $T_c$ e a normalização em traço $T_{\mathrm{tr}}$, operam entrada a entrada ou por somas de linhas e colunas, e custam $\Theta(n^2)$ cada uma. Veja que o centramento não exige os produtos $H\widetilde{\mathbf{G}}H$, visto que $(H\widetilde{\mathbf{G}}H)_{ij} = \widetilde{G}_{ij} - \bar{g}_i - \bar{g}_j + \bar{g}$, em que $\bar{g}_i$ é a média da linha $i$ e $\bar{g}$ a média de todas as entradas. O produto de Hadamard das $d$ componentes custa $\Theta(d\,n^2)$. Sendo assim, com transformações entrada a entrada, a construção custa $\Theta(n^2 D)$ em tempo e $\Theta(n^2)$ em memória, visto que as fontes podem ser processadas uma de cada vez. As transformações espectrais da Equação \eqref{eq:spectral_transformation}, como $T_w$, exigem uma decomposição espectral e custam $\Theta(n^3)$ \citep{GolubVanLoan2013}. Qualquer algoritmo que produza $\mathbf{G}$ precisa escrever as suas $n(n+1)/2$ entradas e ler as $nD$ coordenadas das fontes, de modo que o problema tem limite inferior $\Omega(n^2 + nD)$. A distância entre esse limite e $\Theta(n^2 D)$ é exatamente o custo do produto $XX^\top$ das representações, que algoritmos rápidos de multiplicação de matrizes reduzem apenas assintoticamente.
+
+\textbf{Geometria.} No Algoritmo \ref{alg:geometria}, cada entrada da matriz de distâncias é obtida da Equação \eqref{eq:gram_distance} em tempo constante, e a matriz inteira custa $\Theta(n^2)$. Como a saída tem $n^2$ entradas, esse custo coincide com o limite inferior $\Omega(n^2)$, isto é, a construção da geometria é ótima. A vizinhança $\mathcal{N}_k(i_0)$ e a faixa de nível $\Gamma_{r,\delta}(i_0)$ de uma referência exigem apenas a linha $i_0$ da matriz e custam $\Theta(n)$, a primeira por seleção em tempo linear \citep{Cormen2009}, e ordenar a linha, como no algoritmo, custa $\Theta(n \log n)$. As leituras que tomam cada objeto como referência, como os $k$-vizinhos \textit{leave-one-out}, custam $\Theta(n^2)$ por seleção e $\Theta(n^2 \log n)$ por ordenação.
+
+\textbf{Energia espectral.} O Algoritmo \ref{alg:energia} realiza a decomposição espectral completa de $\mathbf{G}$, que custa $\Theta(n^3)$ com os algoritmos densos usuais para matrizes simétricas \citep{GolubVanLoan2013}, e a partir dela obtém as energias e a razão $\widehat{E}_{\mathrm{ratio}}$ de todos os objetos em $\Theta(nr)$. Essa é a etapa mais cara do método, mas ela pode ser evitada em duas partes. Primeiro, a razão de participação da Equação \eqref{eq:r_participation} não exige os autovalores, visto que, para uma matriz simétrica, $\sum_k \hat\lambda_k = \operatorname{tr}(\mathbf{G})$ e $\sum_k \hat\lambda_k^2 = \|\mathbf{G}\|_F^2$, de modo que $r$ é obtido em $\Theta(n^2)$. Segundo, as leituras utilizam apenas os $r$ modos retidos, e estes podem ser obtidos por métodos de Lanczos ou aleatorizados em $O(n^2 r)$ \citep{Halko2011}. O problema tem limite inferior $\Omega(n^2)$, visto que $\mathbf{G}$ precisa ser lida.
+
+A Tabela \ref{tab:custo} resume a análise. Com a decomposição espectral completa, o método custa $\Theta(n^2 D + n^3)$ por matriz de Gram, e com a decomposição truncada custa $O\bigl(n^2 (D + r)\bigr)$, contra um limite inferior de $\Omega(n^2 + nD)$. Veja que, em ambos os casos, o custo é polinomial em $n$ e linear na dimensão das fontes, e não depende do número de atributos da entrada nem do número de parâmetros do modelo, que entram apenas na obtenção das fontes.
+
+\begin{table}[htbp]
+\centering
+\caption{Custo assintótico das etapas do método, para $n$ objetos, $d$ fontes de dimensão total $D$, $r$ modos retidos e $k$ vizinhos. A segunda coluna é o custo dos algoritmos como descritos, a terceira é uma alternativa mais barata, quando existe, e a quarta é o limite inferior do problema. As células vazias indicam que não há alternativa mais barata.}
+\label{tab:custo}
+\small
+\begin{tabular}{l c c c}
+\hline
+Etapa & Algoritmo & Alternativa & Problema \\
+\hline
+Gram bruta de todas as fontes & $\Theta(n^2 D)$ & & $\Omega(n^2 + nD)$ \\
+$T_a$, deslocamento, $T_c$, $T_{\mathrm{tr}}$, Hadamard & $\Theta(d\,n^2)$ & & $\Omega(n^2)$ \\
+Matriz de distâncias & $\Theta(n^2)$ & & $\Omega(n^2)$ \\
+$\mathcal{N}_k(i_0)$ e $\Gamma_{r,\delta}(i_0)$ & $\Theta(n \log n)$ & $\Theta(n)$ & $\Omega(n)$ \\
+$k$-vizinhos de todos os objetos & $\Theta(n^2 \log n)$ & $\Theta(n^2)$ & $\Omega(n^2)$ \\
+Razão de participação & $\Theta(n^3)$ & $\Theta(n^2)$ & $\Omega(n^2)$ \\
+Decomposição espectral & $\Theta(n^3)$ & $O(n^2 r)$ & $\Omega(n^2)$ \\
+Energias e $\widehat{E}_{\mathrm{ratio}}$, dada a decomposição & $\Theta(nr)$ & & $\Omega(nr)$ \\
+\hline
+Total & $\Theta(n^2 D + n^3)$ & $O\bigl(n^2(D + r)\bigr)$ & $\Omega(n^2 + nD)$ \\
+\hline
+\end{tabular}
+\end{table}

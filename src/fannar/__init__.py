@@ -1,95 +1,46 @@
-"""fannar — interpretabilidade geométrica de modelos de IA via RKHS.
+"""Fannar -- representation spaces of trained models from Gram matrices of several sources.
 
-Núcleo matemático: kernels -> matrizes de Gram -> transformações pós-kernel ->
-produto tensorial (Hadamard) -> decomposição espectral -> energia induzida por
-Gram no espaço de representação -> curvas de nível e diagnósticos.
+The method (fixed): one positive-definite kernel per source of information about each object,
+admissible transformations, Hadamard composition, and the geometry and spectral energy of the
+resulting PSD Gram matrix. The instantiation (your choice): which objects, which sources, which
+kernels and transformations.
+
+Quick start::
+
+    import fannar as fa
+    interp = fa.Interpreter(model, X_test, y_test, layers=["layer1", "layer2"])
+    report = interp.evaluate()
+    interp.plot_report(report)
+    interp.explain_pair(0).top(5)
+
+Building blocks::
+
+    pipe  = fa.KernelPipeline({"A": fa.Component("linear"), "B": fa.Component(my_kernel)})
+    space = pipe(sources={"A": feats_a, "B": feats_b})     # or pipe(grams={"A": K_a, "B": K_b})
+    space.distances, space.neighbors(0, 5), space.energies(), space.embedding()
 """
 
-from __future__ import annotations
+from . import kernels, readings, transforms
+from .interpreter import Interpreter
+from .kernels import RBF, Cosine, FunctionKernel, Kernel, Linear, Polynomial
+from .pairs import PairExplanation
+from .pipeline import (PRESETS, Component, KernelPipeline, paper_pipeline, positions_pipeline,
+                       single_source)
+from .readings import evaluate
+from .report import Report
+from .sources import FunctionSources, Sources, TorchSources, TreeSources
+from .space import GramSpace
+from .transforms import (Transform, angular, center, frobenius_normalize, identity, max_eig_normalize,
+                         psd_project, shift, spectral, trace_normalize, whiten)
 
-__version__ = "0.1.0"
-
-# Config
-from .config import FannarConfig, get_config, set_config
-
-# Diagnósticos
-from .diagnostics import (
-    build_laplacian,
-    coverage,
-    dispersion,
-    explanatory_profile,
-    residual_energy,
-    stability,
-)
-
-# Núcleo
-from .gram import (
-    GramMatrix,
-    TensorGram,
-    distance_matrix,
-    eigendecompose,
-    embedding_fidelity,
-    energy_decomposition,
-    hadamard_combine,
-    principal_subspace,
-    spectral_coordinates,
-)
-from .kernels import (
-    CosineKernel,
-    LinearKernel,
-    PolynomialKernel,
-    RBFKernel,
-)
-
-# Pipelines / explicação
-from .pipelines import (
-    KernelPipeline,
-    LayerPipeline,
-    LayerRepresentations,
-    ModelPipeline,
-    default_layer_pipeline,
-)
-from .transforms import (
-    AngularNormalizeTransform,
-    CenteringTransform,
-    ComposeTransforms,
-    FrobeniusNormalizeTransform,
-    IdentityTransform,
-    MaxEigenvalueNormalizeTransform,
-    SpectralWhiteningTransform,
-    TraceNormalizeTransform,
-)
-
-# Tipos
-from .types import (
-    EnergyDecomposition,
-    ExplanatoryProfile,
-    LayerGeometry,
-    PrincipalSubspace,
-    SpectralDecomposition,
-)
+__version__ = "0.3.0"
 
 __all__ = [
-    "__version__",
-    # config
-    "FannarConfig", "get_config", "set_config",
-    # kernels
-    "LinearKernel", "CosineKernel", "RBFKernel", "PolynomialKernel",
-    # transforms
-    "IdentityTransform", "CenteringTransform", "TraceNormalizeTransform",
-    "FrobeniusNormalizeTransform", "MaxEigenvalueNormalizeTransform",
-    "AngularNormalizeTransform", "SpectralWhiteningTransform", "ComposeTransforms",
-    # gram
-    "GramMatrix", "TensorGram", "hadamard_combine", "distance_matrix",
-    "eigendecompose", "principal_subspace", "energy_decomposition",
-    "spectral_coordinates", "embedding_fidelity",
-    # diagnostics
-    "dispersion", "stability", "coverage", "residual_energy",
-    "build_laplacian", "explanatory_profile",
-    # pipelines
-    "KernelPipeline", "LayerPipeline", "LayerRepresentations", "ModelPipeline",
-    "default_layer_pipeline",
-    # types
-    "SpectralDecomposition", "PrincipalSubspace", "EnergyDecomposition",
-    "ExplanatoryProfile", "LayerGeometry",
+    "Interpreter", "GramSpace", "KernelPipeline", "Component", "Report", "PairExplanation",
+    "Sources", "TorchSources", "TreeSources", "FunctionSources",
+    "Kernel", "Linear", "Cosine", "RBF", "Polynomial", "FunctionKernel",
+    "Transform", "identity", "center", "trace_normalize", "frobenius_normalize", "max_eig_normalize",
+    "angular", "shift", "whiten", "spectral", "psd_project",
+    "paper_pipeline", "single_source", "positions_pipeline", "PRESETS", "evaluate",
+    "kernels", "transforms", "readings", "__version__",
 ]

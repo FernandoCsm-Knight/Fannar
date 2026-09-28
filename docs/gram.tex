@@ -1,0 +1,377 @@
+\section{O Método: Pipeline Núcleo-Transformação}
+\label{sec:kernel_pipeline}
+
+Esta seção descreve o método proposto como um procedimento aplicado sobre uma amostra finita. O método parte de objetos descritos por múltiplas fontes de informação. Sejam $\mathcal{X}_1,\dots,\mathcal{X}_d$ os espaços associados a essas fontes e seja
+\begin{equation}\label{eq:pipeline_product_domain}
+    \mathcal{Z} = \mathcal{X}_1 \times \cdots \times \mathcal{X}_d
+\end{equation}
+o domínio produto. Cada objeto analisado é representado por uma tupla
+\begin{equation}\label{eq:pipeline_observation}
+    z_i = (x_{i1},\dots,x_{id}) \in \mathcal{Z}, \qquad i\in\{1,\dots,n\},
+\end{equation}
+em que $n$ denota o número de objetos da amostra. Na aplicação a modelos de IA, esses objetos podem ser as entradas processadas pelo modelo, como as imagens utilizadas na Seção \ref{sec:metodologia}, ou unidades internas, como os canais de uma camada. Entretanto, a construção não depende dessa interpretação específica.
+
+Para cada componente $l\in\{1,\dots,d\}$, seja
+\begin{equation*}
+    \kappa_l:
+    \mathcal{X}_l\times\mathcal{X}_l
+    \longrightarrow
+    \mathbb{R}
+\end{equation*}
+uma função núcleo positiva definida. O núcleo produto
+\begin{equation}\label{eq:pipeline_product_kernel}
+    \kappa(z_i,z_j) = \prod_{l=1}^{d} \kappa_l(x_{il},x_{jl})
+\end{equation}
+determina uma noção de similaridade conjunta sobre $\mathcal{Z}$ e realiza, no nível amostral, o tensor de similaridade desenvolvido na Seção \ref{sec:tensor_rkhs}. A formulação sobre o domínio produto não exige que as componentes variem diagonalmente nem que sejam derivadas de um mesmo objeto subjacente.
+
+\begin{definition}[Pipeline núcleo-transformação]
+\label{def:kernel_pipeline}
+Seja $\mathcal{Z}=\prod_{l=1}^{d}\mathcal{X}_l$ um domínio produto. Um \emph{pipeline núcleo-transformação} é um par
+\begin{equation}
+    \Pi = (\kappa,T),
+\end{equation}
+em que $\kappa:\mathcal{Z}\times\mathcal{Z}\to\mathbb{R}$ é uma função núcleo positiva definida e $T\in\mathcal{T}_n$ é uma transformação pós-\textit{kernel} admissível.
+
+Dado um conjunto de observações
+\begin{equation*}
+    \{z_1,\dots,z_n\}
+    \subset\mathcal{Z},
+\end{equation*}
+o núcleo $\kappa$ produz a matriz de Gram bruta
+$\widetilde{\mathbf{G}}\in\mathbb{R}^{n\times n}$, cujas entradas são
+\begin{equation}\label{eq:raw_gram}
+    \widetilde{G}_{ij} = \kappa(z_i,z_j), \qquad 1\leq i,j\leq n.
+\end{equation}
+A matriz efetivamente utilizada nos diagnósticos geométricos e espectrais é
+\begin{equation}\label{eq:transformed_gram}
+    \mathbf{G} = T(\widetilde{\mathbf{G}}).
+\end{equation}
+\end{definition}
+
+A função núcleo $\kappa$ determina a geometria bruta observada no espaço de representação, enquanto a transformação $T$ modifica sua realização amostral. Dependendo da transformação escolhida, essa modificação pode remover componentes de translação, eliminar diferenças de escala, normalizar individualmente os objetos ou alterar a distribuição espectral da matriz. Diferentes escolhas de domínio, núcleo e transformação não são, em geral, equivalentes: cada pipeline seleciona uma noção específica de estrutura geométrica e pode, portanto, evidenciar fenômenos distintos.
+
+A matriz $\widetilde{\mathbf{G}}$ é a restrição amostral da função núcleo $\kappa$. Já a matriz
+$\mathbf{G}=T(\widetilde{\mathbf{G}})$ deve ser entendida, em geral, como a matriz de Gram de uma geometria empírica transformada. Quando $T$ é induzida por uma transformação definida no nível da própria função núcleo, $\mathbf{G}$ também pode ser interpretada como a restrição amostral de um novo núcleo. Essa hipótese adicional, entretanto, não é necessária para os diagnósticos matriciais desenvolvidos nesta seção.
+
+No caso do tensor de similaridade definido pelo núcleo produto \eqref{eq:pipeline_product_kernel}, a matriz de Gram bruta admite a fatoração
+\begin{equation}\label{eq:raw_tensor_gram}
+    \widetilde{\mathbf{G}} = \widetilde{\mathbf{G}}_1 \circ \cdots \circ \widetilde{\mathbf{G}}_d,
+\end{equation}
+em que
+\begin{equation}\label{eq:component_raw_gram}
+    (\widetilde{\mathbf{G}}_l)_{ij} = \kappa_l(x_{il},x_{jl}),
+\end{equation}
+e $\circ$ denota o produto de Hadamard. Assim, a construção tensorial permanece implícita: a interação entre as fontes é realizada empiricamente pelo produto das matrizes de Gram componentes.
+
+\begin{remark}[Transformações por componente]
+\label{rem:component_transformations}
+Quando diferentes propriedades devem ser impostas a cada fonte de informação, podem ser utilizados pipelines componentes
+\begin{equation}
+    \Pi_l = (\kappa_l,T_l), \qquad l=1,\dots,d.
+\end{equation}
+Nesse caso, cada matriz componente transformada é definida por
+\begin{equation}\label{eq:component_transformed_gram}
+    \mathbf{G}_l = T_l(\widetilde{\mathbf{G}}_l),
+\end{equation}
+e a matriz conjunta é construída como
+\begin{equation}\label{eq:transformed_tensor_gram}
+    \mathbf{G} = \mathbf{G}_1 \circ \cdots \circ \mathbf{G}_d.
+\end{equation}
+Como cada $\mathbf{G}_l$ é simétrica e semidefinida positiva, o teorema de Schur garante que $\mathbf{G}$ também possui essas propriedades.
+
+Essa construção não coincide, em geral, com a aplicação de uma única transformação à matriz produto bruta,
+\begin{equation}
+    T\left(
+        \widetilde{\mathbf{G}}_1
+        \circ
+        \cdots
+        \circ
+        \widetilde{\mathbf{G}}_d
+    \right).
+\end{equation}
+A primeira alternativa permite impor propriedades específicas a cada fonte antes de combiná-las, enquanto a segunda modifica diretamente a geometria conjunta produzida pelo tensor de similaridade.
+\end{remark}
+
+\subsubsection*{Axiomas para a transformação pós-\textit{kernel}}
+
+\begin{definition}[Transformação pós-\textit{kernel} admissível]
+\label{def:T_admissible}
+Seja $\mathbb{S}_+^n$ o cone das matrizes simétricas semidefinidas positivas de ordem $n$,
+\begin{equation}\label{eq:psd_cone}
+    \mathbb{S}_+^n =
+    \left\{
+        \mathbf{G}\in\mathbb{R}^{n\times n}
+        :
+        \mathbf{G}=\mathbf{G}^{\top}
+        \ \text{e}\
+        x^{\top}\mathbf{G}x\geq 0
+        \ \text{para todo }x\in\mathbb{R}^n
+    \right\}.
+\end{equation}
+
+Uma aplicação
+\begin{equation*}
+    T:
+    \mathbb{S}_+^n
+    \longrightarrow
+    \mathbb{S}_+^n
+\end{equation*}
+é dita uma \emph{transformação pós-\textit{kernel} admissível} se é equivariante a reindexações dos objetos, isto é, se
+\begin{equation}\label{eq:T_permutation}
+    T(P\widetilde{\mathbf{G}}P^\top) = P\,T(\widetilde{\mathbf{G}})\,P^\top
+\end{equation}
+para toda matriz de permutação
+$P\in\{0,1\}^{n\times n}$
+e toda
+$\widetilde{\mathbf{G}}\in\mathbb{S}_+^n$.
+
+A classe das transformações admissíveis é denotada por $\mathcal{T}_n$. Adicionalmente, uma transformação admissível é dita \emph{normalizadora em traço} quando
+\begin{equation}
+    \operatorname{tr}
+    \left(
+        T(\widetilde{\mathbf{G}})
+    \right) = 1
+\end{equation}
+para toda matriz não nula pertencente ao seu domínio de validade, e \emph{idempotente} quando
+\begin{equation}
+    T\circ T = T.
+\end{equation}
+\end{definition}
+
+\begin{remark}[Significado da admissibilidade]
+\label{rem:T_axioms}
+A condição
+\begin{equation*}
+    T: \mathbb{S}_+^n \longrightarrow \mathbb{S}_+^n
+\end{equation*}
+garante que a matriz transformada permanece simétrica e semidefinida positiva. Consequentemente,
+$\mathbf{G}=T(\widetilde{\mathbf{G}})$
+continua admitindo uma realização como produtos internos entre vetores em algum espaço de características empírico.
+
+A equivariância em \eqref{eq:T_permutation} garante que o resultado não dependa da ordem atribuída aos objetos. Reindexar os objetos antes da transformação produz apenas a reindexação correspondente da matriz transformada. Essa propriedade é necessária porque a numeração dos canais, unidades ou observações não possui, por si só, significado geométrico.
+
+As propriedades de normalização e idempotência não fazem parte da admissibilidade básica. Elas apenas selecionam subclasses de transformações com comportamentos algébricos adicionais.
+\end{remark}
+
+A classe $\mathcal{T}_n$ não se restringe às transformações utilizadas neste trabalho. Se
+$T_1,T_2\in\mathcal{T}_n$,
+então a composição
+\begin{equation*}
+    T_2\circ T_1
+\end{equation*}
+também pertence a $\mathcal{T}_n$. São igualmente admissíveis transformações espectrais da forma
+\begin{equation}\label{eq:spectral_transformation}
+    T_f(\widetilde{\mathbf{G}}) = V f(\Lambda)V^\top, \qquad \widetilde{\mathbf{G}} = V\Lambda V^\top,
+\end{equation}
+desde que
+\begin{equation*}
+    f(\lambda)\geq 0
+    \qquad
+    \text{para todo }\lambda\geq 0.
+\end{equation*}
+Nesse caso, $f(\Lambda)$ é obtida pela aplicação de $f$ a cada autovalor de $\widetilde{\mathbf{G}}$. A condição de não negatividade garante que a matriz resultante permaneça semidefinida positiva.
+
+A teoria matricial desenvolvida nas subseções seguintes depende apenas de
+\begin{equation*}
+    \mathbf{G}
+    \in
+    \mathbb{S}_+^n
+\end{equation*}
+e, portanto, não exige uma escolha particular de $T$. O conteúdo interpretativo dos diagnósticos, entretanto, é condicionado pelas propriedades preservadas ou descartadas pela transformação adotada.
+
+\subsubsection*{Catálogo de transformações e propriedades geométricas}
+
+As transformações admissíveis podem apresentar propriedades adicionais, como invariância a translações, reescalonamentos globais ou reescalonamentos individuais. Essas propriedades não decorrem da admissibilidade definida anteriormente e devem ser verificadas separadamente para cada transformação. A condição $T\in\mathcal{T}_n$ garante apenas a preservação da simetria e da semidefinitude positiva, juntamente com a equivariância por reindexação dos objetos.
+
+A Tabela \ref{tab:T_catalog} apresenta algumas transformações relevantes para este trabalho, suas condições de validade, as invariâncias específicas que produzem e as estruturas geométricas enfatizadas. Seja
+\begin{equation}\label{eq:centering_matrix}
+    H = I - \frac{1}{n} \mathbf{1}\mathbf{1}^{\top}
+\end{equation}
+a matriz de centramento, e seja
+\begin{equation}\label{eq:gram_diagonal}
+    D = \operatorname{diag}
+    \left(
+        \widetilde{G}_{11},
+        \dots,
+        \widetilde{G}_{nn}
+    \right)
+\end{equation}
+a matriz formada pelos elementos diagonais de $\widetilde{\mathbf{G}}$.
+
+\begin{table}[ht]
+\scriptsize
+\centering
+\caption{Transformações pós-\textit{kernel}, suas invariâncias específicas e as estruturas geométricas enfatizadas. As transformações que envolvem divisões são definidas apenas quando os denominadores correspondentes são não nulos.}
+\label{tab:T_catalog}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{p{1.5cm} p{2.5cm} p{4.3cm} p{4.6cm}}
+\hline
+\textbf{Símbolo}
+&
+\textbf{Definição}
+&
+\textbf{Transformação específica}
+&
+\textbf{Estrutura enfatizada}
+\\
+\hline
+
+$T_{\mathrm{id}}$
+&
+$\widetilde{\mathbf{G}}$
+&
+Nenhuma invariância geométrica adicional
+&
+Similaridades originais, preservando centro, escala e magnitudes
+\\
+
+$T_c$
+&
+$H\widetilde{\mathbf{G}}H$
+&
+Translação comum das representações no espaço de características
+&
+Relações entre os objetos em torno do centroide
+\\
+
+$T_{\mathrm{tr}}$
+&
+$\displaystyle
+\frac{\widetilde{\mathbf{G}}}
+{\operatorname{tr}(\widetilde{\mathbf{G}})}$
+&
+Reescalonamento global positivo
+&
+Distribuição relativa da energia entre os modos espectrais
+\\
+
+$T_F$
+&
+$\displaystyle
+\frac{\widetilde{\mathbf{G}}}
+{\|\widetilde{\mathbf{G}}\|_F}$
+&
+Reescalonamento global positivo
+&
+Estrutura relativa das entradas medida pela norma de Frobenius
+\\
+
+$T_{\lambda}$
+&
+$\displaystyle
+\frac{\widetilde{\mathbf{G}}}
+{\lambda_{\max}(\widetilde{\mathbf{G}})}$
+&
+Reescalonamento global positivo
+&
+Espectro normalizado relativamente ao modo dominante
+\\
+
+$T_a$
+&
+$\displaystyle
+D^{-1/2}
+\widetilde{\mathbf{G}}
+D^{-1/2}$
+&
+Reescalonamentos positivos individuais das representações
+&
+Similaridade angular, com descarte das magnitudes individuais
+\\
+
+$T_w$
+&
+$V_+V_+^{\top}$
+&
+Transformações que preservam a imagem de $\widetilde{\mathbf{G}}$
+&
+Subespaço espectral suportado pela matriz, sem as magnitudes dos autovalores
+\\
+
+$T_{\mathrm{tr}}\circ T_c$
+&
+$\displaystyle
+\frac{
+    H\widetilde{\mathbf{G}}H
+}{
+    \operatorname{tr}
+    \left(
+        H\widetilde{\mathbf{G}}H
+    \right)
+}$
+&
+Translação comum e reescalonamento global positivo
+&
+Geometria centrada expressa em escala relativa
+\\
+
+\hline
+\end{tabular}
+\end{table}
+
+Na transformação angular $T_a$, assume-se que
+\begin{equation*}
+    \widetilde{G}_{ii}>0,
+    \qquad
+    i=1,\dots,n,
+\end{equation*}
+de modo que $D^{-1/2}$ esteja bem definida. Como
+$\widetilde{G}_{ii}$ corresponde à norma ao quadrado da representação do $i$-ésimo objeto, a transformação normaliza cada representação individualmente. Consequentemente, as entradas da matriz transformada são
+\begin{equation}
+    \bigl(T_a(\widetilde{\mathbf{G}})\bigr)_{ij} =
+    \frac{
+        \widetilde{G}_{ij}
+    }{
+        \sqrt{
+            \widetilde{G}_{ii}
+            \widetilde{G}_{jj}
+        }
+    },
+\end{equation}
+correspondendo à similaridade angular entre as representações.
+
+Na definição de $T_w$, as colunas de $V_+$ formam uma base ortonormal da imagem de $\widetilde{\mathbf{G}}$, isto é, são os autovetores associados aos seus autovalores estritamente positivos. Se
+\begin{equation*}
+    \widetilde{\mathbf{G}} = V_+\Lambda_+V_+^\top,
+\end{equation*}
+com $\Lambda_+$ contendo apenas os autovalores positivos, então
+\begin{equation}
+    T_w(\widetilde{\mathbf{G}}) = V_+V_+^\top
+\end{equation}
+é o projetor ortogonal sobre
+$\operatorname{Im}(\widetilde{\mathbf{G}})$. Essa transformação preserva o subespaço espectral suportado pela matriz, mas substitui todos os autovalores positivos por $1$, descartando suas magnitudes relativas.
+
+As normalizações $T_{\mathrm{tr}}$, $T_F$ e $T_\lambda$ são todas invariantes a reescalonamentos globais positivos,
+\begin{equation*}
+    \widetilde{\mathbf{G}}
+    \longmapsto
+    \alpha\widetilde{\mathbf{G}},
+    \qquad
+    \alpha>0,
+\end{equation*}
+mas utilizam critérios distintos para fixar a escala. A primeira normaliza pela energia espectral total, a segunda pela norma de Frobenius e a terceira pelo maior autovalor. Portanto, embora compartilhem a mesma invariância global, não produzem, em geral, a mesma geometria normalizada.
+
+\subsubsection*{O que é fixo e o que é escolha}
+
+A partir das definições apresentadas nesta seção, o método pode ser descrito por uma estrutura fixa e por cinco escolhas. A estrutura fixa corresponde à forma de composição, isto é, um \textit{kernel} positivamente definido para cada fonte, a combinação das fontes pelo produto de Hadamard e a aplicação de transformações pertencentes a $\mathcal{T}_n$. As escolhas, por sua vez, são: (i) a unidade indexada, isto é, o que cada objeto $z_i$ representa, (ii) as $d$ fontes de informação associadas a cada objeto, (iii) o \textit{kernel} $\kappa_l$ de cada fonte, (iv) as transformações $T_l$ aplicadas a cada componente e a transformação $T$ aplicada à matriz conjunta, e (v) as leituras extraídas de $\mathbf{G}$, desenvolvidas na Seção \ref{sec:representation_geometry} e na Subseção \ref{subsec:spectral}. Veja que é a estrutura fixa que garante, para qualquer conjunto de escolhas, que $\mathbf{G}$ seja semidefinida positiva e, portanto, que ela admita a geometria e a decomposição espectral apresentadas nas seções seguintes.
+
+Essas escolhas não são neutras, visto que, como discutido anteriormente, cada uma delas seleciona uma noção específica de estrutura geométrica. Entretanto, elas não fazem parte do método. Um conjunto particular de escolhas é denominado \emph{instanciação}, e a Seção \ref{sec:metodologia} apresenta uma delas, composta por três fontes extraídas de uma rede convolucional. Sendo assim, os resultados obtidos com essa instanciação avaliam as fontes e os \textit{kernels} escolhidos, enquanto aquilo que pode ser transferido para outros modelos e outras fontes é a forma do método.
+
+O Algoritmo \ref{alg:pipeline} resume esse procedimento de forma genérica. Veja que as escolhas (i) a (iv) aparecem apenas como entradas do algoritmo, enquanto a estrutura fixa corresponde ao seu corpo.
+
+\begin{algorithm}[htbp]
+\caption{Kernel-transformation pipeline}
+\label{alg:pipeline}
+\begin{algorithmic}[1]
+\Require objects $z_i = (x_{i1},\dots,x_{id})$, $i = 1,\dots,n$, kernels $\kappa_1,\dots,\kappa_d$, transformations $T_1,\dots,T_d, T \in \mathcal{T}_n$
+\Ensure Gram matrix $\mathbf{G} \in \mathbb{S}_+^n$
+\State $\mathbf{G} \gets \mathbf{1}\mathbf{1}^\top$
+\For{$l = 1,\dots,d$}
+    \For{$i, j = 1,\dots,n$}
+        \State $(\widetilde{\mathbf{G}}_l)_{ij} \gets \kappa_l(x_{il}, x_{jl})$ \Comment{raw Gram matrix of source $l$}
+    \EndFor
+    \State $\mathbf{G} \gets \mathbf{G} \circ T_l(\widetilde{\mathbf{G}}_l)$ \Comment{Hadamard product}
+\EndFor
+\State \Return $T(\mathbf{G})$
+\end{algorithmic}
+\end{algorithm}
