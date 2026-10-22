@@ -192,7 +192,11 @@ def pair_scores(extractor, pipeline, xi, xj, layers=None) -> dict[str, np.ndarra
     src = extractor(swap_rows(xi, xj).astype(np.float32))
     out = {}
     for layer in layers or src.layer_names:
-        d = pipeline(sources=src.layers[layer], keep_components=False).distances[0]
+        sources = src.layers[layer]
+        if all(np.array_equal(a, np.broadcast_to(a[:1], a.shape)) for a in sources.values()):
+            out[layer] = np.zeros(len(xi))  # every row has the same sources: nothing separates i from j here
+            continue
+        d = pipeline(sources=sources, keep_components=False).distances[0]
         out[layer] = d[1] - d[2:]
     return out
 
