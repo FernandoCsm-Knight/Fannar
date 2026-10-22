@@ -192,6 +192,8 @@ def make_loader(ds: Dataset, batch_size: int, shuffle: bool = False, drop_last: 
     memoria por copia sob escrita e nada e serializado; eles so usam numpy, nunca a GPU.
     """
     kw = {"num_workers": workers, "persistent_workers": workers > 0, "pin_memory": torch.cuda.is_available()}
-    if workers > 0:
+    # no Windows nao ha `fork`: o `spawn` serializa o dataset uma vez por worker, o que com
+    # workers persistentes custa so alguns segundos no inicio
+    if workers > 0 and "fork" in torch.multiprocessing.get_all_start_methods():
         kw["multiprocessing_context"] = "fork"
     return DataLoader(ds, batch_size=batch_size, shuffle=shuffle, drop_last=drop_last, **kw)

@@ -110,7 +110,7 @@ def _grid_to_display(point: tuple[int, int], grid: tuple[int, int], size: int) -
 
 def _bands(ax, image: np.ndarray, p: np.ndarray, n_bands: int, ref: tuple[int, int] | None,
            marker_color) -> None:
-    """Faixas de nivel Γ_{r,δ}: raios nos quantis de p, faixa mais proxima = mais escura."""
+    """Faixas de nivel Γ_{ρ,δ}: raios nos quantis de p, faixa mais proxima = mais escura."""
     size = image.shape[0]
     m = _upsample(p, size)
     edges = np.unique(np.quantile(m, np.linspace(0, 1, n_bands + 1)[1:-1]))
@@ -133,10 +133,10 @@ def plot_level_set_detail(
     path: str,
     n_bands: int = 6,
 ) -> None:
-    """Um bloco: energia, p_{s0} contínua com curvas, faixas Γ_{r,δ}(s0), N_k(s0), faixas de s1."""
+    """Um bloco: energia, p_{s0} contínua com curvas, faixas Γ_{ρ,δ}(s0), N_k(s0), faixas de s1."""
     k = len(images)
     titles = ["imagem", r"$\hat E_\parallel$", r"$p_{s_0}$ e curvas de nível",
-              r"faixas $\Gamma_{r,\delta}(s_0)$", r"$\mathcal{N}_k(s_0)$", r"faixas $\Gamma_{r,\delta}(s_1)$"]
+              r"faixas $\Gamma_{\rho,\delta}(s_0)$", r"$\mathcal{N}_k(s_0)$", r"faixas $\Gamma_{\rho,\delta}(s_1)$"]
     fig, axes = T.grid(k, len(titles), width="full", height=1.2 * k + 0.25)
     for i in range(k):
         img, r = images[i], readouts[i]

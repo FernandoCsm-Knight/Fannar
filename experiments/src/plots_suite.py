@@ -20,8 +20,8 @@ PANELS = [
     ("knn_pred", "k-vizinhos contra a predição"),
     ("correctness_auc", "AUC da margem para o acerto"),
     ("confusion_soft", "Spearman com a confusão suave"),
-    ("containment_k", r"contenção das classes em $V_r$ ($r = K-1$)"),
-    ("e_ratio_auc_k", r"AUC de $\hat E_{\mathrm{ratio}}$ para o erro ($r = K-1$)"),
+    ("containment_k", r"contenção das classes em $V_r$ ($r = Q-1$)"),
+    ("e_ratio_auc_k", r"AUC de $\hat E_{\mathrm{ratio}}$ para o erro ($r = Q-1$)"),
     ("cka_alignment", r"alinhamento $a$ com a CKA"),
     ("cka_halves", "AUC do acerto nas metades da CKA"),
 ]

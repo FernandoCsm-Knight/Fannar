@@ -198,7 +198,7 @@ a matriz de centramento, e seja
 \end{equation}
 a matriz formada pelos elementos diagonais de $\widetilde{\mathbf{G}}$.
 
-\begin{table}[ht]
+\begin{table}[pos=ht]
 \scriptsize
 \centering
 \caption{Transformações pós-\textit{kernel}, suas invariâncias específicas e as estruturas geométricas enfatizadas. As transformações que envolvem divisões são definidas apenas quando os denominadores correspondentes são não nulos.}
@@ -264,7 +264,7 @@ $\displaystyle
 &
 Reescalonamento global positivo
 &
-Espectro normalizado relativamente ao modo dominante
+Normalização pelo modo espectral dominante
 \\
 
 $T_a$
@@ -351,26 +351,34 @@ As normalizações $T_{\mathrm{tr}}$, $T_F$ e $T_\lambda$ são todas invariantes
 \end{equation*}
 mas utilizam critérios distintos para fixar a escala. A primeira normaliza pela energia espectral total, a segunda pela norma de Frobenius e a terceira pelo maior autovalor. Portanto, embora compartilhem a mesma invariância global, não produzem, em geral, a mesma geometria normalizada.
 
+\begin{proposition}[Efeito de $T_c$ e $T_{\mathrm{tr}}$ sobre a geometria de distâncias]\label{prop:invariancia_distancias}
+Seja $\mathbf{G}\in\mathbb{S}_+^n$ e sejam $d_{\mathbf{G}}^2(i,j)=G_{ii}+G_{jj}-2G_{ij}$ as distâncias ao quadrado induzidas (Seção \ref{sec:representation_geometry}). Então \textnormal{(i)} $d^2_{T_c(\mathbf{G})}(i,j)=d^2_{\mathbf{G}}(i,j)$ para todo $i,j$, e \textnormal{(ii)} $d^2_{T_{\mathrm{tr}}(\mathbf{G})}(i,j)=d^2_{\mathbf{G}}(i,j)/\operatorname{tr}(\mathbf{G})$. Em particular, as vizinhanças $N_k$, a ordenação dos vizinhos e qualquer leitura que dependa apenas da ordem das distâncias são invariantes a $T_c$ e a $T_{\mathrm{tr}}$ aplicadas à Gram conjunta.
+\end{proposition}
+\begin{proof}
+Seja $\varphi_i$ uma representação de $\mathbf{G}$ no espaço de características, com $G_{ij}=\langle\varphi_i,\varphi_j\rangle$. A centragem $H\mathbf{G}H$ é a Gram de $\varphi_i-\bar\varphi$, com $\bar\varphi=\frac1n\sum_k\varphi_k$, e a diferença $\varphi_i-\varphi_j$ não se altera. A normalização por traço multiplica todas as entradas por $1/\operatorname{tr}(\mathbf{G})$.
+\end{proof}
+Segue que, nas leituras por vizinhança, margem e contrafactual, apenas as escolhas feitas \emph{antes} da composição (a transformação angular $T_a$ e o deslocamento por $\mathbf{J}$ em cada fonte, Subseção \ref{subsec:construcao}) alteram a geometria. As transformações $T_c$ e $T_{\mathrm{tr}}$, por sua vez, afetam o espectro e, portanto, as leituras de energia $\widehat{E}_{\mathrm{ratio}}$. A contribuição de $T_a$ e de $\mathbf{J}$ deve, assim, ser verificada por ablação (Subseção \ref{subsec:experimentos}, terceira família), e não apenas assumida.
+
 \subsubsection*{O que é fixo e o que é escolha}
 
-A partir das definições apresentadas nesta seção, o método pode ser descrito por uma estrutura fixa e por cinco escolhas. A estrutura fixa corresponde à forma de composição, isto é, um \textit{kernel} positivamente definido para cada fonte, a combinação das fontes pelo produto de Hadamard e a aplicação de transformações pertencentes a $\mathcal{T}_n$. As escolhas, por sua vez, são: (i) a unidade indexada, isto é, o que cada objeto $z_i$ representa, (ii) as $d$ fontes de informação associadas a cada objeto, (iii) o \textit{kernel} $\kappa_l$ de cada fonte, (iv) as transformações $T_l$ aplicadas a cada componente e a transformação $T$ aplicada à matriz conjunta, e (v) as leituras extraídas de $\mathbf{G}$, desenvolvidas na Seção \ref{sec:representation_geometry} e na Subseção \ref{subsec:spectral}. Veja que é a estrutura fixa que garante, para qualquer conjunto de escolhas, que $\mathbf{G}$ seja semidefinida positiva e, portanto, que ela admita a geometria e a decomposição espectral apresentadas nas seções seguintes.
+A partir das definições apresentadas nesta seção, o método pode ser descrito por uma estrutura fixa e por cinco escolhas. A estrutura fixa corresponde à forma de composição, isto é, um \textit{kernel} positivamente definido para cada fonte, a combinação das fontes pelo produto de Hadamard e a aplicação de transformações pertencentes a $\mathcal{T}_n$. As escolhas, por sua vez, são: (i) a unidade indexada, isto é, o que cada objeto $z_i$ representa, (ii) as $d$ fontes de informação associadas a cada objeto, (iii) o \textit{kernel} $\kappa_l$ de cada fonte, (iv) as transformações $T_l$ aplicadas a cada componente e a transformação $T$ aplicada à matriz conjunta, e (v) as leituras extraídas de $\mathbf{G}$, desenvolvidas na Seção \ref{sec:representation_geometry} e na Subseção \ref{subsec:spectral}. Veja que é a estrutura fixa que garante, para qualquer conjunto de escolhas, que $\mathbf{G}$ seja semidefinida positiva e, portanto, que ela admita a geometria e a decomposição espectral apresentadas nas seções seguintes. Essa garantia é de boa definição: ela não implica que a geometria resultante seja informativa sobre o comportamento do modelo, o que depende das fontes e dos \textit{kernels} escolhidos e é verificado empiricamente.
 
-Essas escolhas não são neutras, visto que, como discutido anteriormente, cada uma delas seleciona uma noção específica de estrutura geométrica. Entretanto, elas não fazem parte do método. Um conjunto particular de escolhas é denominado \emph{instanciação}, e a Seção \ref{sec:metodologia} apresenta uma delas, composta por três fontes extraídas de uma rede convolucional. Sendo assim, os resultados obtidos com essa instanciação avaliam as fontes e os \textit{kernels} escolhidos, enquanto aquilo que pode ser transferido para outros modelos e outras fontes é a forma do método.
+Essas escolhas não são neutras, visto que, como discutido anteriormente, cada uma delas seleciona uma noção específica de estrutura geométrica. Entretanto, elas não fazem parte do método. Um conjunto particular de escolhas é denominado \emph{instanciação}, e a Seção \ref{sec:metodologia} apresenta uma delas, composta por três fontes (ativações, gradientes contrastivos e parâmetros ativados) extraídas de redes neurais, e uma segunda, para árvores de decisão, com fontes próprias (caminho, folga e classes). Sendo assim, os resultados obtidos com essa instanciação avaliam as fontes e os \textit{kernels} escolhidos, enquanto aquilo que pode ser transferido para outros modelos e outras fontes é a forma do método.
 
 O Algoritmo \ref{alg:pipeline} resume esse procedimento de forma genérica. Veja que as escolhas (i) a (iv) aparecem apenas como entradas do algoritmo, enquanto a estrutura fixa corresponde ao seu corpo.
 
 \begin{algorithm}[htbp]
-\caption{Kernel-transformation pipeline}
+\caption{\textit{Pipeline} núcleo-transformação}
 \label{alg:pipeline}
 \begin{algorithmic}[1]
-\Require objects $z_i = (x_{i1},\dots,x_{id})$, $i = 1,\dots,n$, kernels $\kappa_1,\dots,\kappa_d$, transformations $T_1,\dots,T_d, T \in \mathcal{T}_n$
-\Ensure Gram matrix $\mathbf{G} \in \mathbb{S}_+^n$
+\Require objetos $z_i = (x_{i1},\dots,x_{id})$, $i = 1,\dots,n$, \textit{kernels} $\kappa_1,\dots,\kappa_d$, transformações $T_1,\dots,T_d, T \in \mathcal{T}_n$
+\Ensure matriz de Gram $\mathbf{G} \in \mathbb{S}_+^n$
 \State $\mathbf{G} \gets \mathbf{1}\mathbf{1}^\top$
 \For{$l = 1,\dots,d$}
     \For{$i, j = 1,\dots,n$}
-        \State $(\widetilde{\mathbf{G}}_l)_{ij} \gets \kappa_l(x_{il}, x_{jl})$ \Comment{raw Gram matrix of source $l$}
+        \State $(\widetilde{\mathbf{G}}_l)_{ij} \gets \kappa_l(x_{il}, x_{jl})$ \Comment{Gram bruta da fonte $l$}
     \EndFor
-    \State $\mathbf{G} \gets \mathbf{G} \circ T_l(\widetilde{\mathbf{G}}_l)$ \Comment{Hadamard product}
+    \State $\mathbf{G} \gets \mathbf{G} \circ T_l(\widetilde{\mathbf{G}}_l)$ \Comment{produto de Hadamard}
 \EndFor
 \State \Return $T(\mathbf{G})$
 \end{algorithmic}

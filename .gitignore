@@ -9,3 +9,5 @@ dist/
 .coverage
 htmlcov/
 *.pt
+.venv/
+experiments/outputs/

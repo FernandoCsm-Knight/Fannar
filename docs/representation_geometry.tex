@@ -31,6 +31,8 @@ representação possivelmente heterogêneos ou sem uma métrica previamente
 especificada passam a admitir uma geometria mensurável no espaço de
 características induzido pelo pipeline.
 
+Esta seção é a contrapartida amostral da Subseção \ref{subsec:metric}: as definições de distância e de conjunto de nível feitas ali sobre o domínio $\mathcal{Z}$ são aqui restritas ao conjunto finito de objetos analisados e passam a depender apenas de $\mathbf{G}$. Para evitar redundância, as quantidades usadas nos experimentos (vizinhanças, bandas de nível e energia espectral) são definidas, daqui em diante, apenas na forma amostral.
+
 Essa geometria não deve ser interpretada como uma propriedade intrínseca e
 única do domínio original. Ela depende da função núcleo e da transformação
 pós-\textit{kernel} adotadas. Diferentes pipelines podem, portanto, induzir
@@ -301,15 +303,15 @@ O Algoritmo \ref{alg:geometria} resume o cálculo dessas quantidades a partir
 da matriz de Gram, sem que as representações $\varphi_i$ precisem ser obtidas.
 
 \begin{algorithm}[htbp]
-\caption{Relative geometry induced by the Gram matrix}
+\caption{Geometria relativa induzida pela matriz de Gram}
 \label{alg:geometria}
 \begin{algorithmic}[1]
-\Require $\mathbf{G} \in \mathbb{S}_+^n$, reference object $i_0$, number of neighbors $k$, radius $r$ and thickness $\delta$
-\Ensure $\mathbf{D}_{\mathbf{G}}$, $\mathcal{N}_k(i_0)$ and $\Gamma_{r,\delta}(i_0)$
+\Require $\mathbf{G} \in \mathbb{S}_+^n$, objeto de referência $i_0$, número de vizinhos $k$, raio $r$ e espessura $\delta$
+\Ensure $\mathbf{D}_{\mathbf{G}}$, $\mathcal{N}_k(i_0)$ e $\Gamma_{r,\delta}(i_0)$
 \For{$i, j = 1,\dots,n$}
-    \State $(\mathbf{D}_{\mathbf{G}})_{ij} \gets \sqrt{\max\left(G_{ii} + G_{jj} - 2G_{ij},\, 0\right)}$ \Comment{Equation \eqref{eq:gram_distance}}
+    \State $(\mathbf{D}_{\mathbf{G}})_{ij} \gets \sqrt{\max\left(G_{ii} + G_{jj} - 2G_{ij},\, 0\right)}$ \Comment{Equação \eqref{eq:gram_distance}}
 \EndFor
-\State $\mathcal{N}_k(i_0) \gets$ the $k$ objects closest to $i_0$ according to $\mathbf{D}_{\mathbf{G}}$
+\State $\mathcal{N}_k(i_0) \gets$ os $k$ objetos mais próximos de $i_0$ segundo $\mathbf{D}_{\mathbf{G}}$
 \State $\Gamma_{r,\delta}(i_0) \gets \{\, j : |(\mathbf{D}_{\mathbf{G}})_{i_0 j} - r| \leq \delta \,\}$
 \end{algorithmic}
 \end{algorithm}
@@ -327,7 +329,7 @@ Veja que os três algoritmos são determinísticos e não tomam decisões que de
 
 A Tabela \ref{tab:custo} resume a análise. Com a decomposição espectral completa, o método custa $\Theta(n^2 D + n^3)$ por matriz de Gram, e com a decomposição truncada custa $O\bigl(n^2 (D + r)\bigr)$, contra um limite inferior de $\Omega(n^2 + nD)$. Veja que, em ambos os casos, o custo é polinomial em $n$ e linear na dimensão das fontes, e não depende do número de atributos da entrada nem do número de parâmetros do modelo, que entram apenas na obtenção das fontes.
 
-\begin{table}[htbp]
+\begin{table}[pos=htbp]
 \centering
 \caption{Custo assintótico das etapas do método, para $n$ objetos, $d$ fontes de dimensão total $D$, $r$ modos retidos e $k$ vizinhos. A segunda coluna é o custo dos algoritmos como descritos, a terceira é uma alternativa mais barata, quando existe, e a quarta é o limite inferior do problema. As células vazias indicam que não há alternativa mais barata.}
 \label{tab:custo}

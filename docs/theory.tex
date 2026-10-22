@@ -1,6 +1,6 @@
 \section{Tensor de Similaridade em Espaços de Hilbert com Núcleo Reprodutor}\label{sec:tensor_rkhs}
 
-A Seção \ref{sec:rkhs} estabeleceu os fundamentos dos RKHS, demonstrando que todo \textit{kernel} simétrico e positivamente definido determina um único RKHS, e que o produto de \textit{kernels} positivamente definidos é também positivamente definido. Esta seção desenvolve, sobre esses fundamentos, a base matemática do método proposto, isto é, o tensor de similaridade construído via produto tensorial de RKHS, e os seus resultados, junto com os das Seções \ref{sec:kernel_pipeline} e \ref{sec:representation_geometry}, constituem a principal contribuição deste trabalho. A construção é apresentada em quatro etapas: o produto tensorial de espaços de Hilbert, o tensor de similaridade como núcleo reprodutor do produto tensorial, a estrutura métrica via curvas de nível, e o complemento ortogonal de RKHS. Cada etapa é fundamentada por demonstrações dos resultados centrais, sem referência a aplicações específicas. Observe que nenhum desses resultados depende de quais são as $d$ fontes ou de quais \textit{kernels} são utilizados, sendo exigido apenas que cada $k_l$ seja positivamente definido. A forma como essa teoria é aplicada sobre uma amostra finita é apresentada na Seção \ref{sec:kernel_pipeline}, enquanto a instanciação utilizada nos experimentos é apresentada na Seção \ref{sec:metodologia}.
+A Seção \ref{sec:rkhs} estabeleceu os fundamentos dos RKHS, demonstrando que todo \textit{kernel} simétrico e positivamente definido determina um único RKHS, e que o produto de \textit{kernels} positivamente definidos é também positivamente definido. Esta seção desenvolve, sobre esses fundamentos, a base matemática do método proposto, isto é, o tensor de similaridade construído via produto tensorial de RKHS, e os seus resultados, junto com os das Seções \ref{sec:kernel_pipeline} e \ref{sec:representation_geometry}, formalizam o arcabouço do método. Ressalta-se que os resultados desta seção são, em sua maior parte, adaptações de resultados clássicos da teoria de RKHS \citep{Aronszajn1950, BerlinetThomas2004, PaulsenRaghupathi2016}. O que se propõe aqui é a sua leitura como \emph{tensor de similaridade} sobre fontes heterogêneas de um mesmo modelo, e não um teorema novo sobre RKHS. A contribuição do trabalho é a combinação desse arcabouço com o protocolo empírico que avalia o que a geometria resultante de fato diz sobre o comportamento do modelo. A construção é apresentada em quatro etapas: o produto tensorial de espaços de Hilbert, o tensor de similaridade como núcleo reprodutor do produto tensorial, a estrutura métrica via curvas de nível, e o complemento ortogonal de RKHS. Cada etapa é fundamentada por demonstrações dos resultados centrais, sem referência a aplicações específicas. Observe que nenhum desses resultados depende de quais são as $d$ fontes ou de quais \textit{kernels} são utilizados, sendo exigido apenas que cada $k_l$ seja positivamente definido. Essa generalidade garante apenas que o objeto está bem definido (que a Gram é semidefinida positiva, que há uma pseudométrica e uma decomposição ortogonal de energia). Ela não garante que a geometria resultante seja informativa sobre o modelo, o que só pode ser verificado empiricamente (Seções \ref{sec:metodologia} e \ref{sec:resultados}). A forma como essa teoria é aplicada sobre uma amostra finita é apresentada na Seção \ref{sec:kernel_pipeline}, enquanto a instanciação utilizada nos experimentos é apresentada na Seção \ref{sec:metodologia}.
 
 \subsection{Produto Tensorial de Espaços de Hilbert}
 
@@ -35,7 +35,7 @@ A forma bilinear definida em \eqref{eq:tensor_inner} estende-se por bilinearidad
 \end{proposition}
 
 \begin{proof}
-A bilinearidade e a simetria decorrem diretamente das propriedades dos produtos internos em cada espaço componente $\mathcal{H}_l$. Para verificar a positividade, considere $u = \sum_{m} c_m \bigotimes_{l} f_l^{(m)} \in \mathcal{T}_0$. Pela bilinearidade, $\langle u,u\rangle = \sum_{m} \sum_{n} c_m c_n \prod_{l} \left\langle f_l^{(m)},f_l^{(n)} \right\rangle_{\mathcal{H}_l}$. Para cada $l$, seja $E_l = \operatorname{span} \left\{f_l^{(1)},\dots,f_l^{(N)} \right\} \subseteq \mathcal{H}_l$.
+Como a aplicação $(f_1,\dots,f_d,g_1,\dots,g_d)\mapsto \prod_l \langle f_l,g_l\rangle_{\mathcal{H}_l}$ é multilinear, a propriedade universal do produto tensorial algébrico garante que ela induz uma única forma bilinear sobre $\mathcal{T}_0\times\mathcal{T}_0$, assim, o valor de $\langle u,v\rangle$ não depende da representação escolhida de $u$ e $v$ como combinações de tensores elementares. A bilinearidade e a simetria decorrem diretamente das propriedades dos produtos internos em cada espaço componente $\mathcal{H}_l$. Para verificar a positividade, considere $u = \sum_{m} c_m \bigotimes_{l} f_l^{(m)} \in \mathcal{T}_0$. Pela bilinearidade, $\langle u,u\rangle = \sum_{m} \sum_{n} c_m c_n \prod_{l} \left\langle f_l^{(m)},f_l^{(n)} \right\rangle_{\mathcal{H}_l}$. Para cada $l$, seja $E_l = \operatorname{span} \left\{f_l^{(1)},\dots,f_l^{(N)} \right\} \subseteq \mathcal{H}_l$.
 
 \noindent Como $E_l$ é finito-dimensional, escolha uma base ortonormal $\{e_{l,1},\dots,e_{l,r_l}\}$ de $E_l$. Então $u$ pode ser escrito de maneira única na forma
 
@@ -56,10 +56,10 @@ A bilinearidade e a simetria decorrem diretamente das propriedades dos produtos 
 Quando cada $\mathcal{H}_l$ tem dimensão finita $D_l$, o produto tensorial $\bigotimes_{l=1}^{d} \mathcal{H}_l$ tem dimensão $\prod_{l=1}^{d} D_l$. As dimensões se multiplicam, não se somam. Em termos geométricos, isso reflete o fato de que um par de bases $\{e_i^{(1)}\}$ e $\{e_j^{(2)}\}$ de dois espaços $\mathcal{H}_1$ e $\mathcal{H}_2$ gera uma base $\{e_i^{(1)} \otimes e_j^{(2)}\}$ de $\mathcal{H}_1 \otimes \mathcal{H}_2$ cuja cardinalidade é $D_1 \cdot D_2$. Cada par de direções de cada espaço componente gera uma direção independente no espaço produto, conforme ilustrado na Figura \ref{fig:tensor_product}.
 \end{remark}
 
-\begin{figure}[htbp]
+\begin{figure}[pos=htbp]
     \centering
-    \includegraphics[width=\textwidth]{img/tensor_product_draft}
-    \caption{Ilustração do produto tensorial $\mathcal{H}_1 \otimes \mathcal{H}_2$. Cada vetor da base $\{e_i^{(1)}\}$ de $\mathcal{H}_1$, com $D_1 = 3$, combinado ao vetor $g = e_1^{(2)}$ de $\mathcal{H}_2$, com $D_2 = 1$, gera uma direção $e_i^{(1)} \otimes g$ do espaço produto, cuja dimensão é $D_1 \cdot D_2 = 3$. O tensor de similaridade $\Phi(z) = \phi_1(x_1) \otimes g$ é um elemento desse espaço.}
+    \includegraphics[width=\textwidth]{tensor_product_draft}
+    \caption{Ilustração do produto tensorial $\mathcal{H}_1 \otimes \mathcal{H}_2$. Cada vetor da base $\{e_i^{(1)}\}$ de $\mathcal{H}_1$, com $D_1 = 3$, combinado ao vetor $g = e_1^{(2)}$ de $\mathcal{H}_2$, com $D_2 = 1$, gera uma direção $e_i^{(1)} \otimes g$ do espaço produto, cuja dimensão é $D_1 \cdot D_2 = 3$. O tensor de similaridade $\Phi(z) = \phi_1(x_1) \otimes g$ é um elemento desse espaço. Com $D_2=1$ o produto tensorial coincide com $\mathcal{H}_1$ a menos de um isomorfismo. A figura ilustra apenas a notação, e o crescimento multiplicativo das dimensões é discutido no Comentário \ref{rem:tensor_dim}.}
     \label{fig:tensor_product}
 \end{figure}
 
@@ -89,9 +89,9 @@ cujo produto interno é dado pelo \textit{kernel} produto sobre $\mathcal{Z}$,
 \end{equation}
 A matriz $\mathbf{G}$ é, assim, a realização finita do tensor de similaridade sobre a amostra: os objetos que caracterizam $\mathcal{H}_K$ se exprimem por meio dela, e não pelos tensores. A Figura \ref{fig:gram_hadamard} ilustra essa composição para $d = 3$ componentes.
 
-\begin{figure}[htbp]
+\begin{figure}[pos=htbp]
     \centering
-    \includegraphics[width=\textwidth]{img/gram_hadamard_draft.png}
+    \includegraphics[width=\textwidth]{gram_hadamard_draft.png}
     \caption{Ilustração da matriz de Gram do tensor de similaridade como produto de Hadamard das matrizes de Gram componentes, $G_{ij} = \prod_l k_l(x_{il}, x_{jl})$. Veja que a matriz $\mathbf{G}$ só apresenta valores altos nas regiões em que as três componentes $\mathbf{K}_1$, $\mathbf{K}_2$ e $\mathbf{K}_3$ são simultaneamente altas, o que reflete o critério de similaridade conjunta do Comentário \ref{rem:joint_similarity}.}
     \label{fig:gram_hadamard}
 \end{figure}
@@ -114,7 +114,7 @@ sob a identificação $\Phi(z) \mapsto K(\cdot, z)$.
 \begin{proof}
 A demonstração tem três passos.
  
-\noindent \textit{(i) $K$ é positivamente definido.} Pela Equação \eqref{eq:kernel_prod} (Seção \ref{sec:rkhs}), o produto de \textit{kernels} positivamente definidos é positivamente definido, pelo Teorema de \cite{Aronszajn1950}, $K$ determina um único RKHS, denotado $\mathcal{H}_K$.
+\noindent \textit{(i) $K$ é positivamente definido.} Pela Equação \eqref{eq:kernel_prod} (Seção \ref{sec:rkhs}), o produto de \textit{kernels} positivamente definidos é positivamente definido e, pelo Teorema de \cite{Aronszajn1950}, $K$ determina um único RKHS, denotado $\mathcal{H}_K$.
  
 \noindent \textit{(ii) $\Phi$ preserva o produto interno.} Cada fator $\phi_l(x_l) = k_l(\cdot, x_l)$ pertence a $\mathcal{H}_{k_l}$, de modo que $\Phi(z)$ é um tensor elementar legítimo. Por \eqref{eq:tensor_inner} e pela propriedade reprodutora em cada fator,
 \begin{equation*}
@@ -126,11 +126,15 @@ A demonstração tem três passos.
 \begin{equation*}
     = \prod_{l=1}^{d} k_l(x_l, x_l') = K(z, z') = \langle K(\cdot, z), K(\cdot, z') \rangle_{\mathcal{H}_K}.
 \end{equation*}
-Logo o mapa $\Phi(z) \mapsto K(\cdot, z)$, estendido por linearidade ao span dos tensores de similaridade, preserva o produto interno, é uma isometria linear.
+Logo o mapa $\Phi(z) \mapsto K(\cdot, z)$, estendido por linearidade ao span dos tensores de similaridade, preserva o produto interno e é, portanto uma isometria linear.
  
-\noindent \textit{(iii) Densidade nos dois lados.} Por definição de RKHS, o span de $\{K(\cdot, z) : z \in \mathcal{Z}\}$ é denso em $\mathcal{H}_K$. Reciprocamente, como cada $x_l$ varia \emph{independentemente} em $\mathcal{X}_l$ e o span de $\{k_l(\cdot, x_l)\}$ é denso em $\mathcal{H}_{k_l}$, a multilinearidade e a continuidade de $\otimes$ garantem que o span de $\{\Phi(z)\}$ seja denso em $\bigotimes_l \mathcal{H}_{k_l}$. Uma isometria definida num subespaço denso estende-se de modo único, por continuidade, a uma isometria \emph{sobrejetora} entre os fechos, obtém-se assim o isomorfismo \eqref{eq:full_iso}. A variação independente dos $x_l$ é o passo decisivo: sem ela, o span conteria apenas tensores diagonais e não seria denso (Comentário \ref{rem:diagonal_case}).
+\noindent \textit{(iii) Densidade nos dois lados.} Por definição de RKHS, o span de $\{K(\cdot, z) : z \in \mathcal{Z}\}$ é denso em $\mathcal{H}_K$. Reciprocamente, como cada $x_l$ varia \emph{independentemente} em $\mathcal{X}_l$ e o span de $\{k_l(\cdot, x_l)\}$ é denso em $\mathcal{H}_{k_l}$, a multilinearidade e a continuidade de $\otimes$ garantem que o span de $\{\Phi(z)\}$ seja denso em $\bigotimes_l \mathcal{H}_{k_l}$. Uma isometria definida num subespaço denso estende-se de modo único, por continuidade, a uma isometria \emph{sobrejetora} entre os fechos. Obtém-se assim o isomorfismo \eqref{eq:full_iso}. A variação independente dos $x_l$ é o passo decisivo: sem ela, o span conteria apenas tensores diagonais e não seria denso (Comentário \ref{rem:diagonal_case}).
 \end{proof}
  
+\begin{remark}[Caráter clássico do resultado]\label{rem:classico}
+O Teorema \ref{thm:tensor_similarity} é uma instância do resultado clássico segundo o qual o RKHS do produto de \textit{kernels} definidos em domínios distintos é o produto tensorial dos RKHS dos fatores \citep{Aronszajn1950, BerlinetThomas2004, PaulsenRaghupathi2016}, e o Corolário \ref{cor:hadamard_form} é o teorema do produto de Schur \citep{Schur1911, HornJohnson2013}. A demonstração é incluída para tornar o texto autocontido e para explicitar o papel da variação independente das componentes. A novidade do trabalho não está no teorema, mas em tratá-lo como o princípio de composição de fontes heterogêneas extraídas de um mesmo modelo e em avaliar empiricamente o que essa composição acrescenta (Seção \ref{subsec:res_composicao}).
+\end{remark}
+
 \begin{remark}[Caso diagonal e suporte dos dados]\label{rem:diagonal_case}
 A hipótese decisiva do Teorema \ref{thm:tensor_similarity} é a variação independente das componentes. Se, em vez disso, as $d$ fontes forem todas derivadas de um mesmo objeto subjacente $x$, por um mapa de acoplamento $x \mapsto (x_1(x), \dots, x_d(x))$, as observações vivem numa subvariedade acoplada de $\mathcal{Z}$ (o ``caso diagonal''), e o span de $\{\Phi\}$ gera apenas um subespaço \emph{próprio} de $\bigotimes_l \mathcal{H}_{k_l}$. Nesse regime, ainda que o isomorfismo \eqref{eq:full_iso} descreva o objeto no nível do domínio, a dimensão \emph{efetiva} suportada pelas observações satisfaz $\mathrm{rank}(\mathbf{G}) \leq n$, em geral abaixo de $\prod_l D_l$: é uma propriedade do suporte amostral, não do núcleo, e não afeta o teorema nem a forma da Gram $\mathbf{G} = \mathbf{K}_1 \circ \cdots \circ \mathbf{K}_d$.
 \end{remark}
@@ -145,7 +149,7 @@ A entrada $(i,j)$ de $\mathbf{K}_1 \circ \cdots \circ \mathbf{K}_d$ é $\prod_l 
  
 
 \begin{remark}[Critério de similaridade conjunta]\label{rem:joint_similarity}
-A forma multiplicativa de \eqref{eq:K_thm} impõe um critério de similaridade \emph{conjunta}: assumindo $k_l \geq 0$ (como em \textit{kernels} normalizados), para que $K(z, z')$ seja grande é necessário que todo $k_l(x_l, x_l')$ seja grande. Um único fator próximo de zero suprime o produto, como pode ser observado na Figura \ref{fig:gram_hadamard}. Isso difere qualitativamente de uma combinação aditiva $\sum_l \alpha_l k_l$, em que um fator dominante poderia mascarar a discordância dos demais. Quando os $k_l$ podem ser negativos, a interpretação exige cuidado, pois cancelamentos de sinal podem produzir $K(z,z')$ pequeno mesmo com fatores individuais não pequenos em módulo.
+A forma multiplicativa de \eqref{eq:K_thm} impõe um critério de similaridade \emph{conjunta}: assumindo $k_l \geq 0$ (como em \textit{kernels} normalizados), para que $K(z, z')$ seja grande é necessário que todo $k_l(x_l, x_l')$ seja grande. Um único fator próximo de zero suprime o produto, como pode ser observado na Figura \ref{fig:gram_hadamard}. Isso difere qualitativamente de uma combinação aditiva $\sum_l \alpha_l k_l$, em que um fator dominante poderia mascarar a discordância dos demais. Quando os $k_l$ podem ser negativos, a interpretação exige cuidado, pois cancelamentos de sinal podem produzir $K(z,z')$ pequeno mesmo com fatores individuais não pequenos em módulo. Esse critério é uma propriedade da forma do \textit{kernel}, e não evidência de que o produto seja preferível à soma para fins de interpretação. Para \textit{kernels} gaussianos, por exemplo, o produto equivale ao \textit{kernel} gaussiano sobre a concatenação das fontes, de modo que a vantagem da composição multiplicativa sobre alternativas (soma ponderada, concatenação, fonte isolada) é uma questão empírica, tratada na Subseção \ref{subsec:res_composicao}.
 \end{remark}
 
 \begin{corollary}[Composição recursiva]\label{cor:recursive_composition}
@@ -168,18 +172,18 @@ Estabelecida a realização de $\mathcal{H}_K$, resta dotá-lo de uma estrutura 
 \end{equation}
 que decorre da expansão da norma da diferença e da identificação $\langle \Phi(z), \Phi(z')\rangle_{\mathcal{H}_K} = K(z, z')$. Trata-se de uma medida par a par de natureza global, inteiramente calculável a partir de $\mathbf{G}$: quantifica a similaridade entre dois pontos, mas não exibe, por si só, como a representação varia na vizinhança de uma referência.
  
-\textbf{Curvas de nível.} Para explicitar a estrutura local em torno de uma referência $z_0 \in \mathcal{Z}$, define-se a função distância $p(z) = \|\Phi(z) - \Phi(z_0)\|_{\mathcal{H}_K}$ e, para cada raio $r > 0$, o conjunto de nível
+\textbf{Curvas de nível.} Para explicitar a estrutura local em torno de uma referência $z_0 \in \mathcal{Z}$, define-se a função distância $p(z) = \|\Phi(z) - \Phi(z_0)\|_{\mathcal{H}_K}$ e, para cada raio $\rho > 0$, o conjunto de nível
 \begin{equation}\label{eq:level_curve}
-    \Gamma_r(z_0) = \{ z \in \mathcal{Z} : p(z) = r \},
+    \Gamma_\rho(z_0) = \{ z \in \mathcal{Z} : p(z) = \rho \},
 \end{equation}
-formado pelos pontos equidistantes de $z_0$ na métrica de $\mathcal{H}_K$. À medida que $r$ cresce, os conjuntos $\Gamma_r(z_0)$ organizam $\mathcal{Z}$ em camadas de equidistância em torno de $z_0$.
+formado pelos pontos equidistantes de $z_0$ na métrica de $\mathcal{H}_K$. À medida que $\rho$ cresce, os conjuntos $\Gamma_\rho(z_0)$ organizam $\mathcal{Z}$ em camadas de equidistância em torno de $z_0$.
  
 \begin{proposition}[Propriedades de $p$]\label{prop:dist_props}
-A função $p$ satisfaz: \textnormal{(i)} $p(z) \geq 0$, com $p(z) = 0$ se e somente se $K(\cdot, z) = K(\cdot, z_0)$ como funções, \textnormal{(ii)} $p$ é contínua na topologia induzida por $K$ e \textnormal{(iii)} onde $p$ é diferenciável, $\nabla p$ é perpendicular aos conjuntos de nível $\Gamma_r(z_0)$.
+A função $p$ satisfaz: \textnormal{(i)} $p(z) \geq 0$, com $p(z) = 0$ se e somente se $K(\cdot, z) = K(\cdot, z_0)$ como funções, \textnormal{(ii)} a função $d_K(z,z')=\|\Phi(z)-\Phi(z')\|_{\mathcal{H}_K}$ é uma pseudométrica sobre $\mathcal{Z}$ e $p$ é $1$-Lipschitz em relação a ela, isto é, $|p(z)-p(z')|\leq d_K(z,z')$.
 \end{proposition}
  
 \begin{proof}
-(i) decorre de $\|v\| = 0 \iff v = 0$ em espaços de Hilbert. (ii) decorre da continuidade da norma e da avaliação pontual em RKHS \citep{Aronszajn1950}. (iii) é a propriedade clássica de que o gradiente de uma função escalar é perpendicular às superfícies onde ela é constante.
+(i) decorre de $\|v\| = 0 \iff v = 0$ em espaços de Hilbert. (ii) a simetria e a desigualdade triangular de $d_K$ decorrem das propriedades da norma, e $|p(z)-p(z')|=\big|\|\Phi(z)-\Phi(z_0)\|-\|\Phi(z')-\Phi(z_0)\|\big|\leq\|\Phi(z)-\Phi(z')\|$ pela desigualdade triangular reversa. Não se define um gradiente de $p$, visto que $\mathcal{Z}$ não possui estrutura diferenciável nesta formulação. No regime amostral, a estrutura local é descrita por vizinhanças e bandas discretas (Subseção \ref{subsec:sample_relative_geometry}).
 \end{proof}
  
 \begin{remark}[Separabilidade de pontos]\label{rem:point_sep}
@@ -192,9 +196,9 @@ A utilidade dos conjuntos de nível é qualitativa: a rapidez com que $p$ cresce
  
 A análise da subseção anterior descreve a métrica de $\mathcal{H}_K$. Resta caracterizar como a energia das representações se distribui entre os modos espectrais do núcleo, distinguindo as direções dominantes daquelas excluídas pelo truncamento espectral. Essa caracterização é obtida por meio da decomposição espectral de $K$.
  
-\textbf{Decomposição de Mercer.} Seja $\mu$ uma medida finita sobre $\mathcal{Z}$ e seja $T_K : L^2(\mathcal{Z},\mu) \to L^2(\mathcal{Z},\mu)$ o operador integral definido por
+\textbf{Decomposição de Mercer.} Seja $\mu$ uma medida finita sobre $\mathcal{Z}$ e seja $L_K : L^2(\mathcal{Z},\mu) \to L^2(\mathcal{Z},\mu)$ o operador integral definido por
 \begin{equation}\label{eq:integral_operator}
-    (T_K f)(z)
+    (L_K f)(z)
     =
     \int_{\mathcal{Z}}
     K(z,z')\,f(z')\,d\mu(z').
@@ -208,7 +212,7 @@ Se $K$ é contínuo, simétrico e positivamente definido, e $\mathcal{Z}$ é com
     \qquad
     \lambda_1 \geq \lambda_2 \geq \cdots \geq 0,
 \end{equation}
-em que $\{\psi_k\}$ é um sistema ortonormal de autofunções de $T_K$ em $L^2(\mathcal{Z},\mu)$ \citep{Mercer1909, Aronszajn1950}. Para os autovalores positivos, o conjunto
+em que $\{\psi_k\}$ é um sistema ortonormal de autofunções de $L_K$ em $L^2(\mathcal{Z},\mu)$ \citep{Mercer1909, Aronszajn1950}. Para os autovalores positivos, o conjunto
 \begin{equation*}
     \left\{
         \sqrt{\lambda_k}\,\psi_k
@@ -222,7 +226,7 @@ Empiricamente, quando se dispõe apenas da matriz de Gram
     =
     V\Lambda V^\top,
 \end{equation*}
-os autovalores e autovetores de $\mathbf{G}$ fornecem uma aproximação finita da decomposição de Mercer. As colunas de $V$ representam as direções espectrais observadas na amostra, enquanto os elementos diagonais de $\Lambda$ quantificam a contribuição de cada uma dessas direções.
+os autovalores e autovetores de $\mathbf{G}$ fornecem uma aproximação finita da decomposição de Mercer. As colunas de $V$ representam as direções espectrais observadas na amostra, enquanto os elementos diagonais de $\Lambda$ quantificam a contribuição de cada uma dessas direções. Sob a hipótese de que as observações são amostradas de forma independente segundo $\mu$, e com $K$ contínuo e limitado, os autovalores de $\mathbf{G}/n$ convergem para os de $L_K$ \citep{KoltchinskiiGine2000, Rosasco2010}. Duas ressalvas se aplicam: (a) a matriz efetivamente decomposta nos experimentos é a Gram após o \textit{pipeline} $T$ (centramento, normalização), de modo que o objeto analisado é o \textit{kernel} transformado e não o produto original; e (b) a hipótese de amostragem independente é uma idealização, pois as amostras vêm de um conjunto de avaliação fixo. As quantidades espectrais devem, portanto, ser lidas como propriedades da amostra analisada, e a ligação com o operador $L_K$ é de natureza assintótica.
  
 \textbf{Subespaço espectral retido.} Retêm-se os $r$ modos de maior autovalor:
 \begin{equation}\label{eq:V_r}
@@ -266,7 +270,7 @@ Uma segunda regra, que não exige a escolha de um limiar, é a razão de partici
         }
     \right),
 \end{equation}
-que vale $m$ para um espectro com $m$ autovalores iguais e $1$ para um núcleo de posto um, de modo que conta os modos efetivamente ativos em vez de fixar uma proporção de energia. Essa é a regra adotada nos experimentos da Seção \ref{sec:metodologia}. Em qualquer das duas regras, o complemento ortogonal $V_r^\perp$ contém as direções de $\mathcal{H}_K$ excluídas pelo truncamento espectral.
+que vale $m$ para um espectro com $m$ autovalores iguais e $1$ para um núcleo de posto um, de modo que conta os modos efetivamente ativos em vez de fixar uma proporção de energia. A regra efetivamente empregada em cada experimento é indicada na Subseção \ref{subsec:construcao}. Em qualquer das duas regras, o complemento ortogonal $V_r^\perp$ contém as direções de $\mathcal{H}_K$ excluídas pelo truncamento espectral.
  
 \begin{proposition}[Decomposição ortogonal]\label{prop:ortho_decomp}
 Toda função $u \in \mathcal{H}_K$ admite uma decomposição única
@@ -462,16 +466,16 @@ e a razão empírica de energia ortogonal é
 O Algoritmo \ref{alg:energia} resume o cálculo empírico dessas quantidades.
 
 \begin{algorithm}[htbp]
-\caption{Retained subspace and orthogonal energy ratio}
+\caption{Subespaço retido e razão de energia ortogonal}
 \label{alg:energia}
 \begin{algorithmic}[1]
-\Require $\mathbf{G} \in \mathbb{S}_+^n$, rank rule (participation ratio or threshold $\tau \in (0,1)$)
-\Ensure $r$ and $\widehat{E}_{\mathrm{ratio}}(z_i)$, $i = 1,\dots,n$
-\State $V, \Lambda \gets$ spectral decomposition of $\mathbf{G}$, with $\widehat{\lambda}_1 \geq \cdots \geq \widehat{\lambda}_n$
-\If{participation ratio}
-    \State $r \gets \operatorname{round}\bigl( (\sum_{k=1}^{n} \widehat{\lambda}_k)^2 \big/ \sum_{k=1}^{n} \widehat{\lambda}_k^2 \bigr)$ \Comment{Equation \eqref{eq:r_participation}}
+\Require $\mathbf{G} \in \mathbb{S}_+^n$, regra para $r$ (razão de participação ou limiar $\tau \in (0,1)$)
+\Ensure $r$ e $\widehat{E}_{\mathrm{ratio}}(z_i)$, $i = 1,\dots,n$
+\State $V, \Lambda \gets$ decomposição espectral de $\mathbf{G}$, com $\widehat{\lambda}_1 \geq \cdots \geq \widehat{\lambda}_n$
+\If{razão de participação}
+    \State $r \gets \operatorname{round}\bigl( (\sum_{k=1}^{n} \widehat{\lambda}_k)^2 \big/ \sum_{k=1}^{n} \widehat{\lambda}_k^2 \bigr)$ \Comment{Equação \eqref{eq:r_participation}}
 \Else
-    \State $r \gets \min\{\, r' : \sum_{k=1}^{r'} \widehat{\lambda}_k \big/ \sum_{k=1}^{n} \widehat{\lambda}_k \geq \tau \,\}$ \Comment{Equation \eqref{eq:r_threshold}}
+    \State $r \gets \min\{\, r' : \sum_{k=1}^{r'} \widehat{\lambda}_k \big/ \sum_{k=1}^{n} \widehat{\lambda}_k \geq \tau \,\}$ \Comment{Equação \eqref{eq:r_threshold}}
 \EndIf
 \For{$i = 1,\dots,n$}
     \State $\widehat{E}_{i,\perp} \gets \sum_{k=r+1}^{n} \widehat{\lambda}_k V_{ik}^2$

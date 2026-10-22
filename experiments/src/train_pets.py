@@ -24,18 +24,23 @@ import torch
 import torch.nn as nn
 from sklearn.model_selection import train_test_split
 
-from .data_pets import SIZE, PetsDataset, channel_stats, load_pets, make_loader
+from .data_images import load_images
+from .data_pets import SIZE, PetsDataset, channel_stats, make_loader
 from .model import CIFAR10ResNet
 from .vit import PetsViT
 
 ARCHS = ("resnet", "vit")
 
 
-def make_model(n_classes: int, arch: str = "resnet") -> torch.nn.Module:
-    """A ResNet do artigo ou o transformer de `src/vit.py`, mesma interface de sondagem."""
+def make_model(n_classes: int, arch: str = "resnet", size: int = SIZE) -> torch.nn.Module:
+    """A ResNet do artigo ou o transformer de `src/vit.py`, mesma interface de sondagem.
+
+    Com 128 px (Pet) a convolucao de entrada tem passo 2; com 32 px (CIFAR-100), passo 1, de
+    modo que os estados ficam em 32, 16 e 8 px.
+    """
     if arch == "vit":
-        return PetsViT(n_classes=n_classes, size=SIZE)
-    return CIFAR10ResNet(n_classes=n_classes, stem_stride=2)
+        return PetsViT(n_classes=n_classes, size=size)
+    return CIFAR10ResNet(n_classes=n_classes, stem_stride=2 if size >= 64 else 1)
 
 
 def optimizer_for(model, arch: str, epochs: int, steps: int):
@@ -78,10 +83,12 @@ def evaluate(model, loader, device) -> float:
 
 
 def train_seed(seed: int, out: Path, epochs: int = 60, batch: int = 64, workers: int = 8,
-               device: torch.device | None = None, arch: str = "resnet", mix: float = 0.5) -> dict:
+               device: torch.device | None = None, arch: str = "resnet", mix: float = 0.5,
+               dataset: str = "pets") -> dict:
     """Treina uma semente e grava o checkpoint (com o estado inicial); devolve o blob."""
     device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    data = load_pets(SIZE)
+    data = load_images(dataset)
+    size = int(data["images"].shape[1])
     trainval = np.flatnonzero(data["split"] == 0)
     train_idx, val_idx = train_test_split(trainval, test_size=0.1, stratify=data["labels"][trainval],
                                           random_state=seed)
@@ -89,7 +96,7 @@ def train_seed(seed: int, out: Path, epochs: int = 60, batch: int = 64, workers:
     n_classes = len(data["classes"])
 
     torch.manual_seed(seed)
-    model = make_model(n_classes, arch).to(device)
+    model = make_model(n_classes, arch, size).to(device)
     initial = copy.deepcopy(model.state_dict())
     train_dl = make_loader(PetsDataset(data["images"][train_idx], data["labels"][train_idx], mean, std, True),
                            batch, shuffle=True, drop_last=True, workers=workers)
@@ -142,7 +149,7 @@ def train_seed(seed: int, out: Path, epochs: int = 60, batch: int = 64, workers:
         tmp.replace(partial)
     blob = {"state_dict": best_state, "initial_state_dict": initial, "val_acc": best, "epoch": best_epoch,
             "mean": mean, "std": std, "train_idx": train_idx, "val_idx": val_idx, "seed": seed,
-            "n_classes": n_classes, "size": SIZE, "arch": arch}
+            "n_classes": n_classes, "size": size, "arch": arch, "dataset": dataset}
     out.parent.mkdir(parents=True, exist_ok=True)
     tmp = out.with_suffix(".tmp")
     torch.save(blob, tmp)
@@ -151,21 +158,27 @@ def train_seed(seed: int, out: Path, epochs: int = 60, batch: int = 64, workers:
     return blob
 
 
-def checkpoint_path(seed: int, arch: str = "resnet", out_dir: Path = Path("outputs/pets_models")) -> Path:
+def models_dir(dataset: str = "pets") -> Path:
+    return Path(f"outputs/{dataset}_models")
+
+
+def checkpoint_path(seed: int, arch: str = "resnet", out_dir: Path | None = None, dataset: str = "pets") -> Path:
+    out_dir = out_dir or models_dir(dataset)
     return out_dir / (f"seed{seed}.pt" if arch == "resnet" else f"{arch}_seed{seed}.pt")
 
 
-def load_or_train(seed: int, out_dir: Path = Path("outputs/pets_models"), arch: str = "resnet", **kw) -> dict:
-    path = checkpoint_path(seed, arch, out_dir)
+def load_or_train(seed: int, out_dir: Path | None = None, arch: str = "resnet", dataset: str = "pets",
+                  **kw) -> dict:
+    path = checkpoint_path(seed, arch, out_dir, dataset)
     if path.exists():
         return torch.load(path, map_location="cpu", weights_only=False)
-    return train_seed(seed, path, arch=arch, **kw)
+    return train_seed(seed, path, arch=arch, dataset=dataset, **kw)
 
 
 def models_from(blob: dict, device: torch.device) -> tuple[torch.nn.Module, torch.nn.Module]:
     """(treinada, nao treinada com os mesmos pesos iniciais), ambas em modo de avaliacao."""
-    arch = blob.get("arch", "resnet")
-    trained, untrained = make_model(blob["n_classes"], arch), make_model(blob["n_classes"], arch)
+    arch, size = blob.get("arch", "resnet"), blob.get("size", SIZE)
+    trained, untrained = make_model(blob["n_classes"], arch, size), make_model(blob["n_classes"], arch, size)
     trained.load_state_dict(blob["state_dict"])
     untrained.load_state_dict(blob["initial_state_dict"])
     return trained.to(device).eval(), untrained.to(device).eval()
@@ -177,10 +190,14 @@ def main() -> None:
     ap.add_argument("--epochs", type=int, default=60)
     ap.add_argument("--arch", default="resnet", choices=ARCHS)
     ap.add_argument("--mix", type=float, default=0.5, help="probabilidade de mixup/cutmix por lote")
-    ap.add_argument("--out", default="outputs/pets_models")
+    ap.add_argument("--dataset", default="pets", choices=("pets", "cifar100"))
+    ap.add_argument("--workers", type=int, default=8)
+    ap.add_argument("--out", default=None, help="padrao: outputs/<base>_models")
     args = ap.parse_args()
-    blob = train_seed(args.seed, checkpoint_path(args.seed, args.arch, Path(args.out)),
-                      epochs=args.epochs, arch=args.arch, mix=args.mix)
+    out = Path(args.out) if args.out else None
+    blob = train_seed(args.seed, checkpoint_path(args.seed, args.arch, out, args.dataset),
+                      epochs=args.epochs, arch=args.arch, mix=args.mix, dataset=args.dataset,
+                      workers=args.workers)
     print(f"melhor validação {blob['val_acc']:.3f} na época {blob['epoch']}")
 
 

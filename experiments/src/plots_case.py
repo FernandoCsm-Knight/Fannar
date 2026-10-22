@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import numpy as np
+import seaborn as sns
 from scipy.stats import spearmanr
 
 from . import theme as T
@@ -11,17 +12,25 @@ T.use()
 
 import matplotlib.pyplot as plt  # noqa: E402,F401  (tema antes do pyplot)
 
+_EXTRA = sns.color_palette("colorblind", 10)  # as duas fatias fora da ordem canonica de `theme`
 STYLE = {
     "method": T.series("joint"),
     "shap_baseline": T.series("params"),
     "shap": T.series("grads"),
     "lime": T.series("joint_root"),
+    "ig": {"color": _EXTRA[9], "marker": "P", "markeredgewidth": 0.0},
+    "dice": {"color": _EXTRA[8], "marker": "*", "markeredgewidth": 0.0},
     "absdiff": T.series("activations"),
     "gradxdelta": T.series("rsa_euclid"),
     "random": {**T.control("aleatória", marker="o"), "linestyle": (0, (1.0, 1.6))},
     "floor": T.control("método na rede não treinada"),
 }
-CURVES = ("method", "shap_baseline", "shap", "lime", "absdiff", "gradxdelta", "random", "floor")
+CURVES = ("method", "shap_baseline", "shap", "lime", "ig", "dice", "absdiff", "gradxdelta", "random", "floor")
+
+
+def _present(runs: list[dict], kinds) -> list[str]:
+    """So as series que a execucao tem (o DiCE e opcional)."""
+    return [k for k in kinds if k in ("method", "floor") or k in runs[0]["auc"]]
 
 
 def _area(y, x):
@@ -44,17 +53,20 @@ def plot_case_study(runs: list[dict], block: str, labels: dict, global_labels: d
     (d) importancia global contra a permutacao no MLP."""
     grid = np.asarray(runs[0]["grid"])
     blocks = runs[0]["blocks"]
+    # a legenda de (a), que vale tambem para (b), fica fora dos paineis, a esquerda de (a): com dez
+    # series ela cobria as curvas. Ela ocupa a margem que os rotulos longos de (c) ja reservam na
+    # coluna da esquerda, e que na linha de cima ficaria vazia -- a figura nao precisa crescer
     fig, axes = T.grid(2, 2, width="full", height=5.4)
 
     ax = axes[0, 0]
-    for kind in CURVES:
+    for kind in _present(runs, CURVES):
         curves = np.array([r["curves"][_key(kind, block)] for r in runs])
         style = {**STYLE[kind], "label": labels[kind]}
         style.pop("marker", None)
         ax.plot(grid, curves.mean(0), lw=1.4, **style)
     ax.set_xlabel("fração dos atributos de j trocados em i")
     ax.set_ylabel("fração dos pares na classe de j")
-    ax.legend(fontsize=6.0, loc="lower right")
+    handles, names = ax.get_legend_handles_labels()
     T.despine(ax)
     T.decimal(ax, "both", 1)
 
@@ -65,7 +77,7 @@ def plot_case_study(runs: list[dict], block: str, labels: dict, global_labels: d
         m, s = vals.mean(0), vals.std(0)
         ax.fill_between(x, m - s, m + s, color=STYLE[kind]["color"], alpha=0.12, linewidth=0)
         ax.plot(x, m, lw=1.4, ms=3.2, **{**STYLE[kind], "label": labels[kind]})
-    for ref in ("shap_baseline", "shap", "lime", "absdiff", "gradxdelta", "random"):
+    for ref in _present(runs, ("shap_baseline", "shap", "lime", "ig", "dice", "absdiff", "gradxdelta", "random")):
         v = np.mean([r["auc"][ref] for r in runs])
         style = {k: v2 for k, v2 in STYLE[ref].items() if k in ("color", "linestyle")}
         ax.axhline(v, lw=1.0, **style)  # mesmas series e estilos de (a), cuja legenda vale aqui
@@ -78,7 +90,8 @@ def plot_case_study(runs: list[dict], block: str, labels: dict, global_labels: d
 
     # (c) o atributo em que a arvore substituta separa i de j esta entre os 3 primeiros?
     ax = axes[1, 0]
-    kinds = ("method", "shap_baseline", "shap", "lime", "absdiff", "gradxdelta", "random", "floor")
+    kinds = _present(runs, ("method", "shap_baseline", "shap", "lime", "ig", "dice", "absdiff", "gradxdelta",
+                            "random", "floor"))
     hits, chance = {k: [] for k in kinds}, []
     for r in runs:
         per, ch = {k: [] for k in kinds}, []
@@ -119,7 +132,7 @@ def plot_case_study(runs: list[dict], block: str, labels: dict, global_labels: d
         vals = np.array([_norm(r["global"][kind][block] if kind == "method" else r["global"][kind]) for r in runs])
         rho = np.mean([spearmanr(v, p)[0] for v, p in zip(vals, (r["global"]["permutation"] for r in runs))])
         ax.plot(xs, vals.mean(0)[order], linestyle="none", ms=4.0,
-                **{**style, "label": f"{global_labels[kind]}, ρ = {rho:.2f}".replace(".", ",")})
+                **{**style, "label": f"{global_labels[kind]}: {rho:.2f}".replace(".", ",")})
     ax.set_xticks(xs)
     ax.set_xticklabels([features[f] for f in order], rotation=60, ha="right", fontsize=6.0)
     ax.set_ylabel("parcela da importância")
@@ -129,6 +142,12 @@ def plot_case_study(runs: list[dict], block: str, labels: dict, global_labels: d
 
     T.panel_tags(axes)
     fig.tight_layout()
+    # depois do layout: a borda direita da legenda encosta no rotulo do eixo y de (a)
+    a = axes[0, 0]
+    label = a.yaxis.label.get_window_extent(fig.canvas.get_renderer()).transformed(fig.transFigure.inverted())
+    box = a.get_position()
+    fig.legend(handles, names, fontsize=6.3, loc="center right", frameon=False, handlelength=1.6,
+               bbox_to_anchor=(label.x0 - 0.01, box.y0 + box.height / 2))
     T.save(fig, path)
 
 
@@ -201,7 +220,7 @@ def plot_tree_case(runs: list[dict], labels: dict, path: str) -> None:
         vals = np.array([_norm(r["global"][kind]) for r in runs])
         rho = np.mean([spearmanr(r["global"][kind], r["global"]["gini"])[0] for r in runs])
         ax.plot(xs, vals.mean(0)[order], linestyle="none", ms=4.0,
-                **{**style, "label": f"{name}, ρ = {rho:.2f}".replace(".", ",")})
+                **{**style, "label": f"{name}: {rho:.2f}".replace(".", ",")})
     from letter_case_study import DATASET  # noqa: PLC0415
     from src.data_tabular import feature_names  # noqa: PLC0415
     feats = feature_names(DATASET)

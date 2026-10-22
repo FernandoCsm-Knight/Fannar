@@ -50,7 +50,7 @@ READINGS = (
     "knn_pred", "correctness_auc", "confusion", "confusion_test", "confusion_soft",
     "containment", "containment_k", "containment_matched", "e_ratio_auc", "e_ratio_auc_k",
     "cka_alignment", "cka_seen_knn", "cka_resid_knn", "cka_seen_auc", "cka_resid_auc",
-    "cka_discarded",
+    "cka_discarded", "semantic_auc",
 )
 
 # (rotulo, leitura, comparada com): "floor" = piso cruzado; um nome de representacao = a
@@ -69,7 +69,16 @@ CLAIMS = [
     ("Ê_ratio (r = K−1): conjunta > só A", "e_ratio_auc_k", "activations"),
     ("kNN: conjunta > RSA", "knn_pred", "rsa"),
     ("AUC do acerto: conjunta > RSA", "correctness_auc", "rsa"),
+    # P2: a composicao contra a *melhor* fonte isolada, e nao so contra A
+    ("kNN: conjunta > só Ω", "knn_pred", "grads"),
+    ("AUC do acerto: conjunta > só Ω", "correctness_auc", "grads"),
+    ("confusão suave: conjunta > só Ω", "confusion_soft", "grads"),
+    ("kNN: conjunta > só W", "knn_pred", "params"),
+    ("AUC do acerto: conjunta > só W", "correctness_auc", "params"),
     ("CKA: metade residual prevê o acerto melhor que a vista", "cka_resid_auc", "key:cka_seen_auc"),
+    # P9: hierarquia semantica externa (so nas bases de imagens)
+    ("semântica acima do piso", "semantic_auc", "floor"),
+    ("semântica: conjunta > só A", "semantic_auc", "activations"),
 ]
 
 LABELS = {
@@ -85,6 +94,7 @@ LABELS = {
     "cka_alignment": "Alinhamento $a$ com a Gram das ativações (CKA)",
     "cka_seen_auc": "AUC do acerto na metade vista pela CKA",
     "cka_resid_auc": "AUC do acerto na metade residual",
+    "semantic_auc": "AUC da proximidade entre classes para o mesmo grupo semântico (P9)",
     "cka_discarded": "Massa espectral descartada ao projetar a metade residual",
 }
 
@@ -127,12 +137,18 @@ def flip_rates(model, x: torch.Tensor, device: torch.device, sigmas, seed: int) 
     return out
 
 
-def behaviour_references(probs: np.ndarray, labels: np.ndarray, n_classes: int) -> dict:
+def behaviour_references(probs: np.ndarray, labels: np.ndarray, n_classes: int,
+                         groups: np.ndarray | None = None) -> dict:
     """Confusao contada e confusao suave, sobre todo o conjunto de avaliacao.
 
     A contagem sobre a amostra de 500 e esparsa demais em bases faceis (0,04 erro por par no
     letter). A confusao suave S_ab + S_ba, com S_ab a probabilidade media que o modelo da a b
     nas amostras de a, usa toda a amostra e nao so os erros.
+
+    `groups` (P9) e o grupo semantico de cada classe (especie, superclasse). Vai junto a AUC
+    com que a propria confusao suave separa os pares do mesmo grupo: se o comportamento do
+    modelo ja carrega a hierarquia, uma geometria que a reproduz pode estar so refletindo o
+    comportamento, e e contra esse valor que a leitura geometrica deve ser lida.
     """
     preds = probs.argmax(1)
     soft = np.zeros((n_classes, n_classes))
@@ -147,7 +163,22 @@ def behaviour_references(probs: np.ndarray, labels: np.ndarray, n_classes: int) 
     np.fill_diagonal(soft, 0.0)
     np.fill_diagonal(count, 0.0)
     iu = np.triu_indices(n_classes, k=1)
-    return {"soft": soft, "test": count, "test_zero_pairs": float(np.mean(count[iu] == 0))}
+    out = {"soft": soft, "test": count, "test_zero_pairs": float(np.mean(count[iu] == 0))}
+    if groups is not None:
+        same = np.asarray(groups)[:, None] == np.asarray(groups)[None, :]
+        out["hierarchy"] = same
+        out["behaviour_semantic_auc"] = _auc(soft[iu], same[iu])
+    return out
+
+
+def semantic_auc(d: np.ndarray, labels: np.ndarray, n_classes: int, same: np.ndarray) -> float:
+    """AUC com que a proximidade media entre duas classes separa os pares do mesmo grupo."""
+    m = class_distance_matrix(d, labels, n_classes)
+    iu = np.triu_indices(n_classes, k=1)
+    score = -m[iu]
+    if not np.isfinite(score).all():
+        return float("nan")
+    return _auc(score, same[iu])
 
 
 def sample_zero_pairs(labels: np.ndarray, preds: np.ndarray, n_classes: int) -> float:
@@ -237,6 +268,8 @@ def readings(d, gram, labels, preds, margin, n_classes, cfg, act_gram=None, raw=
     for key, ref in (("confusion_test", "test"), ("confusion_soft", "soft")):
         out[key] = (class_agreement(d, labels, n_classes, refs[ref])
                     if refs is not None and n_classes >= 5 else nan)
+    out["semantic_auc"] = (semantic_auc(d, labels, n_classes, refs["hierarchy"])
+                           if refs is not None and "hierarchy" in refs else nan)
     if gram is None:
         return out
     try:

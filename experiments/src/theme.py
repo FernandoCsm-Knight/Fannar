@@ -54,13 +54,13 @@ from matplotlib.ticker import FuncFormatter
 ORDER = ["joint", "joint_root", "params", "activations", "grads",
          "rsa_euclid", "joint_ag", "rsa_corr"]
 LABEL = {
-    "joint": r"conjunta $(W,A,\Gamma)$",
+    "joint": r"conjunta $(W,A,\Omega)$",
     "joint_root": r"conjunta, raiz $d$-ésima",
     "params": r"só $W$ (parâmetros)",
     "activations": r"só $A$ (ativações)",
-    "grads": r"só $\Gamma$ (gradiente)",
+    "grads": r"só $\Omega$ (gradiente)",
     "rsa_euclid": "RSA euclidiana",
-    "joint_ag": r"conjunta $(A,\Gamma)$",
+    "joint_ag": r"conjunta $(A,\Omega)$",
     "rsa_corr": r"RSA $1-$Pearson",
 }
 PALETTE = sns.color_palette("colorblind", n_colors=len(ORDER))
@@ -146,7 +146,8 @@ def use() -> None:
         font="serif",
         font_scale=0.85,
         rc={
-            "font.serif": ["Nimbus Roman", "Liberation Serif", "DejaVu Serif"],
+            # Nimbus Roman no Linux, Times New Roman no Windows: os dois sao o Times
+            "font.serif": ["Nimbus Roman", "Times New Roman", "Liberation Serif", "DejaVu Serif"],
             "mathtext.fontset": "stix",
             "figure.dpi": 200,
             "savefig.dpi": 400,

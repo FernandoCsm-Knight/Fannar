@@ -140,7 +140,7 @@ def draw_method(ax, p, feats, geom) -> None:
         lab.set_fontweight("bold")
     ys = [y for y, _ in rows]
     ax.set_yticks(ys)
-    ax.set_yticklabels([f"ℓ = {-y}" for y in ys[:-1]] + ["máx."], fontsize=6.0)
+    ax.set_yticklabels([rf"$\ell$ = {-y}" for y in ys[:-1]] + ["máx."], fontsize=6.0)
     ax.set_xlim(-0.5, len(cols) + 1.6)
     ax.set_ylim(leaf_y - 0.7, 0.9)
     ax.tick_params(length=0)
@@ -151,9 +151,9 @@ def draw_method(ax, p, feats, geom) -> None:
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--pairs", type=int, nargs="+", default=[41, 91])
-    ap.add_argument("--run", default="outputs/tree_case/runs/seed0.json")
+    ap.add_argument("--run", default=("outputs/tree_case" if DATASET == "letter" else f"outputs/tree_case_{DATASET}") + "/runs/seed0.json")
     ap.add_argument("--min-leaf", type=int, default=3)
-    ap.add_argument("--out", default="outputs/tree_case/tree_vs_method.pdf")
+    ap.add_argument("--out", default=("outputs/tree_case" if DATASET == "letter" else f"outputs/tree_case_{DATASET}") + "/tree_vs_method.pdf")
     args = ap.parse_args()
 
     run = json.loads(Path(args.run).read_text())

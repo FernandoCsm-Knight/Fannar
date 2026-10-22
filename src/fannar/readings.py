@@ -107,9 +107,13 @@ def geometric_margin(space, labels, against=None) -> np.ndarray:
 
 
 def correctness_auc(space, labels, predictions) -> float:
-    """How well the geometric margin (against the true label) predicts that the model is right."""
+    """How well the geometric margin predicts that the model is right.
+
+    The margin groups objects by the model's *predictions*: the true labels only define the
+    target (right or wrong). Using them in the margin as well would make the reading circular and
+    would rely on a signal that does not exist at deployment time."""
     labels, predictions = np.asarray(labels), np.asarray(predictions)
-    return auc(geometric_margin(space, labels), predictions == labels)
+    return auc(geometric_margin(space, predictions), predictions == labels)
 
 
 def soft_confusion(probabilities, labels) -> tuple[np.ndarray, np.ndarray]:

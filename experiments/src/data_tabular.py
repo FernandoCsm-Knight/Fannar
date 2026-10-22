@@ -15,12 +15,35 @@ Criterios de escolha, medidos antes de fixar a lista:
 
 from __future__ import annotations
 
+import functools
+import os
+import socket
 import warnings
 
 import numpy as np
 from sklearn.datasets import fetch_openml
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
+
+from . import data_mirror
+
+
+@functools.lru_cache(maxsize=1)
+def use_mirror() -> bool:
+    """Le das fontes originais (`data_mirror`) quando o OpenML nao responde.
+
+    `FANNAR_DATA=openml` ou `FANNAR_DATA=mirror` forcam uma das duas; sem a variavel, um teste
+    de conexao de poucos segundos decide, em vez de deixar o `fetch_openml` esperar minutos.
+    """
+    choice = os.environ.get("FANNAR_DATA", "").lower()
+    if choice in ("openml", "mirror"):
+        return choice == "mirror"
+    try:
+        socket.create_connection(("api.openml.org", 443), timeout=5).close()
+        return False
+    except OSError:
+        warnings.warn("OpenML inacessivel: usando as fontes originais (src/data_mirror.py)")
+        return True
 
 DATASETS = {
     "letter": 6,
@@ -50,7 +73,8 @@ ALL = DATASETS | EXTRA
 def _titanic() -> tuple[np.ndarray, np.ndarray, list[str], list[str]]:
     """Titanic com codificacao explicita: (X, y, nomes dos atributos, nomes das classes)."""
     warnings.filterwarnings("ignore")
-    df = fetch_openml(data_id=EXTRA["titanic"], as_frame=True, parser="auto").frame
+    df = (data_mirror.titanic_frame() if use_mirror()
+          else fetch_openml(data_id=EXTRA["titanic"], as_frame=True, parser="auto").frame)
     y = df["survived"].astype(int).to_numpy()
     cols = {
         "classe (1–3)": df["pclass"].astype(float),
@@ -73,6 +97,8 @@ def feature_names(name: str) -> list[str]:
     warnings.filterwarnings("ignore")
     if name == "titanic":
         return _titanic()[2]
+    if use_mirror():
+        return data_mirror.load(name)[2]
     return list(fetch_openml(data_id=ALL[name], as_frame=False, parser="auto").feature_names)
 
 
@@ -81,6 +107,8 @@ def class_names(name: str) -> list[str]:
     warnings.filterwarnings("ignore")
     if name == "titanic":
         return _titanic()[3]
+    if use_mirror():
+        return data_mirror.load(name)[3]
     y = fetch_openml(data_id=ALL[name], as_frame=False, parser="auto").target
     return [str(c) for c in LabelEncoder().fit(np.asarray(y)).classes_]
 
@@ -91,9 +119,12 @@ def load_tabular(name: str, seed: int = 0) -> tuple[np.ndarray, np.ndarray]:
     if name == "titanic":
         X, y, _, _ = _titanic()
         return X.astype(np.float32), y.astype(np.int64)
-    X, y = fetch_openml(data_id=ALL[name], as_frame=False, return_X_y=True, parser="auto")
+    if use_mirror():
+        X, y, _, _ = data_mirror.load(name)
+    else:
+        X, y = fetch_openml(data_id=ALL[name], as_frame=False, return_X_y=True, parser="auto")
+        y = LabelEncoder().fit_transform(np.asarray(y)).astype(np.int64)
     X = np.nan_to_num(np.asarray(X, dtype=np.float64))
-    y = LabelEncoder().fit_transform(np.asarray(y)).astype(np.int64)
     if name in MAX_SAMPLES and len(y) > MAX_SAMPLES[name]:
         keep, _ = train_test_split(np.arange(len(y)), train_size=MAX_SAMPLES[name],
                                    stratify=y, random_state=0)

@@ -42,11 +42,18 @@ Tres perguntas.
 Custos: o metodo precisa de F + 2 linhas numa passagem direta e reversa; o Shapley exato,
 de 2^F passagens diretas; o SHAP da biblioteca, de max_evals × |fundo| por amostra.
 
-Saidas em `outputs/letter_case/`: `runs/seed{s}.json` (retomavel), `tables.md`,
+Saidas em `outputs/<base>_case/`: `runs/seed{s}.json` (retomavel), `tables.md`,
 `exemplos.md`, `case_study.pdf/png`.
+
+Segunda base. O mesmo estudo roda na `pendigits` (Alpaydin & Alimoglu): 16 atributos com
+significado (as coordenadas x, y de 8 pontos reamostrados do traco da caneta), 10 classes e
+F = 16, de modo que o Shapley exato tambem cabe. A base e escolhida pela variavel de ambiente
+`FANNAR_CASE` (padrao `letter`), lida por todos os scripts que importam `DATASET` daqui
+(`letter_budget.py`, `tree_case_study.py`, `tree_case_figure.py`).
 
 Uso:
     python letter_case_study.py --seeds 5 --pairs 100
+    FANNAR_CASE=pendigits python letter_case_study.py --seeds 5 --pairs 100
 """
 
 from __future__ import annotations
@@ -54,6 +61,7 @@ from __future__ import annotations
 import argparse
 import copy
 import json
+import os
 import time
 from math import factorial
 from pathlib import Path
@@ -65,15 +73,17 @@ import torch
 from scipy.stats import spearmanr
 from sklearn.tree import DecisionTreeClassifier, export_text
 
+from src.attributions import build_dice, dice_scores, integrated_gradients
 from src.data_tabular import balanced_sample, class_names, feature_names, load_tabular, split, standardize
 from src.mlp import ResidualMLP
 from tabular_differences import area, flip_curve, gradxdelta, method_scores
 from tabular_suite import train
 
-DATASET = "letter"
+DATASET = os.environ.get("FANNAR_CASE", "letter")
+assert DATASET in ("letter", "pendigits"), f"FANNAR_CASE={DATASET}: os estudos de caso usam letter ou pendigits"
 
 # Frey & Slate (1991), "Letter recognition using Holland-style adaptive classifiers".
-DESCRIPTION = {
+LETTER_DESCRIPTION = {
     "x-box": "posição horizontal da caixa",
     "y-box": "posição vertical da caixa",
     "width": "largura da caixa",
@@ -91,15 +101,23 @@ DESCRIPTION = {
     "y-ege": "nº médio de bordas, varrendo de baixo para cima",
     "yegvx": "correlação de y-ege com x",
 }
+# Alpaydin & Alimoglu (1998): o traco e reamostrado em 8 pontos igualmente espacados ao longo do
+# comprimento e normalizado para [0, 100]; cada atributo e uma coordenada de um desses pontos
+PENDIGITS_DESCRIPTION = {f"{axis}{k}": f"coordenada {axis} do {k}º ponto do traço"
+                         for k in range(1, 9) for axis in ("x", "y")}
+DESCRIPTION = LETTER_DESCRIPTION if DATASET == "letter" else PENDIGITS_DESCRIPTION
 
-RANKINGS = ("method", "shap_baseline", "shap", "shap_i", "lime", "lime_i", "absdiff", "gradxdelta", "random", "floor")
+RANKINGS = ("method", "shap_baseline", "shap", "shap_i", "lime", "lime_i", "ig", "dice", "absdiff", "gradxdelta",
+            "random", "floor")
 LABEL = {
-    "method": "método (Δd na Gram conjunta)",
+    "method": r"método ($\Delta_f$ na Gram conjunta)",
     "shap_baseline": "Shapley exato com j de referência",
     "shap": "SHAP (φ(j) − φ(i), fundo de treino)",
     "shap_i": "SHAP só de i",
     "lime": "LIME contrastivo (margem j − i)",
     "lime_i": "LIME só de i",
+    "ig": "gradientes integrados (x_i → x_j)",
+    "dice": "DiCE (frequência de alteração)",
     "absdiff": "|Δx|",
     "gradxdelta": "grad × Δx",
     "random": "aleatória entre os que diferem",
@@ -297,12 +315,14 @@ def run_one(seed: int, args, device) -> dict:
     lime_reg = LimeTabularExplainer(X_tr, mode="regression", discretize_continuous=False,
                                     sample_around_instance=True, random_state=seed)
     lime_cls = LimeTabularExplainer(X_tr, mode="classification", random_state=seed)
+    dice = build_dice(model, X_tr, y[tr], device, seed) if args.dice else None
 
     grid = np.linspace(0, 1, args.steps + 1)
     blocks = model.block_names
-    curves = {r: [] for r in RANKINGS if r not in ("method", "floor")}
+    skip = ("method", "floor") + (() if args.dice else ("dice",))
+    curves = {r: [] for r in RANKINGS if r not in skip}
     curves |= {f"method@{b}": [] for b in blocks} | {f"floor@{b}": [] for b in blocks}
-    records, timings = [], {"method": [], "shap_baseline": [], "lime": []}
+    records, timings = [], {"method": [], "shap_baseline": [], "lime": [], "ig": [], "dice": []}
     for i, j in pairs:
         xi, xj, ci, cj = X_te[i], X_te[j], int(preds[i]), int(preds[j])
         differ = np.flatnonzero(np.abs(xj - xi) > 1e-9)
@@ -320,6 +340,9 @@ def run_one(seed: int, args, device) -> dict:
         lime_c = lime_contrastive(lime_reg, model, xi, xj, ci, cj, device, args.lime_samples)
         timings["lime"].append(time.perf_counter() - t0)
         w_i = lime_weights(lime_cls, model, xi, (ci, cj), device, args.lime_samples)
+        t0 = time.perf_counter()
+        ig = integrated_gradients(model, xi, xj, ci, cj, device, args.ig_steps)
+        timings["ig"].append(time.perf_counter() - t0)
 
         shuffled = rng.permutation(differ)
         rest = np.setdiff1d(np.arange(F), differ)
@@ -329,9 +352,14 @@ def run_one(seed: int, args, device) -> dict:
             "shap_i": margin_of(phi_at[i], ci, cj),
             "lime": lime_c,
             "lime_i": w_i[ci] - w_i[cj],
+            "ig": ig,
             "absdiff": np.abs(xj - xi),
             "gradxdelta": gradxdelta(model, xi, xj, ci, cj, device),
         }
+        if dice is not None:
+            t0 = time.perf_counter()
+            attributions["dice"] = dice_scores(dice, xi, cj, args.dice_cfs, rng)
+            timings["dice"].append(time.perf_counter() - t0)
         orders = {k: np.argsort(-v, kind="stable") for k, v in attributions.items()}
         orders["random"] = np.concatenate([shuffled, rest])
         for b in blocks:
@@ -392,6 +420,8 @@ def run_one(seed: int, args, device) -> dict:
                  "shap_baseline_s": float(np.mean(timings["shap_baseline"])),
                  "shap_s_per_sample": float(t_shap),
                  "lime_s": float(np.mean(timings["lime"])), "lime_evals": args.lime_samples,
+                 "ig_s": float(np.mean(timings["ig"])), "ig_evals": args.ig_steps,
+                 "dice_s": float(np.mean(timings["dice"])) if timings["dice"] else None,
                  "method_evals": F + 2, "shap_baseline_evals": 2 ** F,
                  "shap_evals_per_sample": args.max_evals * args.background},
         "surrogate_top": export_text(surrogate, feature_names=feature_names(DATASET), max_depth=3),
@@ -417,6 +447,7 @@ def local_tree_metrics(runs: list[dict], tree: str, block: str) -> dict:
     """Posicao do atributo em que a arvore separa i de j, em cada ranking, por semente."""
     keys = {"method": f"method@{block}", "floor": f"floor@{block}", **{k: k for k in RANKINGS
             if k not in ("method", "floor")}}
+    keys = {k: v for k, v in keys.items() if v in runs[0]["pairs"][0]["orders"]}
     out = {k: {"top1": [], "top3": [], "rr": []} for k in keys} | {"chance": {"top1": [], "top3": [], "rr": []}}
     counts = []
     for r in runs:
@@ -447,7 +478,7 @@ def write_report(runs: list[dict], args, out: Path) -> None:
     feats, classes = feature_names(DATASET), class_names(DATASET)
     blocks, eb = runs[0]["blocks"], args.block
     n_pairs = sum(len(r["pairs"]) for r in runs)
-    L = ["# Estudo de caso: `letter` — método × SHAP × árvore\n",
+    L = [f"# Estudo de caso: `{DATASET}` — método × SHAP × árvore\n",
          f"{len(runs)} sementes, {args.pairs} pares por semente ({n_pairs} pares). MLP residual de "
          f"{args.blocks} blocos; método na Gram conjunta de {eb}, alvo fixo (classe {classes[args.fixed_target]}). "
          "Média ± desvio entre sementes.\n",
@@ -461,8 +492,9 @@ def write_report(runs: list[dict], args, out: Path) -> None:
          f"- atributos que diferem entre i e j: {pm([p['n_differ'] for r in runs for p in r['pairs']], 1)} de {runs[0]['n_features']}\n"]
 
     # 1. teste contrafactual
-    keys = [f"method@{eb}", "shap_baseline", "shap", "shap_i", "lime", "lime_i", "absdiff", "gradxdelta", "random",
-            f"floor@{eb}"]
+    keys = [f"method@{eb}", "shap_baseline", "shap", "shap_i", "lime", "lime_i", "ig", "dice", "absdiff",
+            "gradxdelta", "random", f"floor@{eb}"]
+    keys = [k for k in keys if k in runs[0]["auc"]]
     L += ["## 1. Teste contrafactual de trocas (área sob a curva, maior = melhor)\n",
           "| ranking | AUC | método vence em |", "|---|---|---|"]
     for k in keys:
@@ -486,7 +518,12 @@ def write_report(runs: list[dict], args, out: Path) -> None:
           f"| método (todos os {len(blocks)} blocos) | {c['method_evals']} diretas + reversas | {fmt(np.mean([r['cost']['method_s'] for r in runs]) * 1e3, 1)} ms |",
           f"| Shapley exato | {c['shap_baseline_evals']} diretas | {fmt(np.mean([r['cost']['shap_baseline_s'] for r in runs]) * 1e3, 1)} ms |",
           f"| SHAP da biblioteca (2 amostras) | {2 * c['shap_evals_per_sample']} diretas | {fmt(2 * np.mean([r['cost']['shap_s_per_sample'] for r in runs]) * 1e3, 1)} ms |",
-          f"| LIME contrastivo | {c['lime_evals']} diretas | {fmt(np.mean([r['cost']['lime_s'] for r in runs]) * 1e3, 1)} ms |", ""]
+          f"| LIME contrastivo | {c['lime_evals']} diretas | {fmt(np.mean([r['cost']['lime_s'] for r in runs]) * 1e3, 1)} ms |",
+          f"| gradientes integrados | {c['ig_evals']} diretas + reversas | {fmt(np.mean([r['cost']['ig_s'] for r in runs]) * 1e3, 1)} ms |"]
+    if c.get("dice_s") is not None:
+        L.append(f"| DiCE (random, {args.dice_cfs} contrafactuais) | amostragem | "
+                 f"{fmt(np.mean([r['cost']['dice_s'] for r in runs]) * 1e3, 1)} ms |")
+    L.append("")
 
     # 2. arvore, par a par
     for tree, title in (("surrogate", "árvore substituta (predições do MLP)"), ("label_tree", "árvore nos rótulos")):
@@ -496,8 +533,10 @@ def write_report(runs: list[dict], args, out: Path) -> None:
               f"Pares em que a árvore reproduz as duas predições do MLP: {pm(res['used'], 1)} de {args.pairs} por semente. "
               "Posição desse atributo em cada ranking.\n",
               "| ranking | 1º do ranking | entre os 3 primeiros | posto recíproco médio |", "|---|---|---|---|"]
-        for k in ("method", "shap_baseline", "shap", "shap_i", "lime", "lime_i", "absdiff", "gradxdelta", "random",
-                  "floor", "chance"):
+        for k in ("method", "shap_baseline", "shap", "shap_i", "lime", "lime_i", "ig", "dice", "absdiff",
+                  "gradxdelta", "random", "floor", "chance"):
+            if k not in m:
+                continue
             name = "acaso analítico entre os que diferem" if k == "chance" else LABEL[k]
             L.append(f"| {name} | {pm(m[k]['top1'])} | {pm(m[k]['top3'])} | {pm(m[k]['rr'])} |")
         L.append("")
@@ -532,8 +571,9 @@ def write_report(runs: list[dict], args, out: Path) -> None:
 def write_examples(run: dict, args, out: Path, feats, classes) -> None:
     """Pares da semente 0 lidos por extenso: método, Shapley exato, árvore e o método bloco a bloco."""
     eb, blocks = args.block, run["blocks"]
-    E = ["# Exemplos de leitura — `letter`, semente 0\n",
-         "Valores na escala original (inteiros de 0 a 15). Parcela = fração do ganho positivo de "
+    E = [f"# Exemplos de leitura — `{DATASET}`, semente 0\n",
+         f"Valores na escala original ({'inteiros de 0 a 15' if DATASET == 'letter' else 'coordenadas de 0 a 100'}). "
+         "Parcela = fração do ganho positivo de "
          f"proximidade (método, {eb}) ou do Shapley positivo (Shapley exato com j de referência).\n"]
     shown = 0
     for p in run["pairs"]:
@@ -580,6 +620,9 @@ def main() -> None:
     ap.add_argument("--global-samples", type=int, default=520)
     ap.add_argument("--lime-samples", type=int, default=5000, help="amostras de perturbação do LIME (padrão da biblioteca)")
     ap.add_argument("--repeats", type=int, default=5)
+    ap.add_argument("--ig-steps", type=int, default=64)
+    ap.add_argument("--dice", action="store_true", help="inclui o DiCE (pip install dice-ml)")
+    ap.add_argument("--dice-cfs", type=int, default=5)
     ap.add_argument("--min-leaf", type=int, default=3)
     ap.add_argument("--examples", type=int, default=4)
     ap.add_argument("--width", type=int, default=256)
@@ -591,7 +634,7 @@ def main() -> None:
     ap.add_argument("--weight-decay", type=float, default=1e-4)
     ap.add_argument("--shift", type=float, default=1.0)
     ap.add_argument("--fixed-target", type=int, default=0)
-    ap.add_argument("--out", default="outputs/letter_case")
+    ap.add_argument("--out", default=f"outputs/{DATASET}_case")
     args = ap.parse_args()
 
     out = Path(args.out)

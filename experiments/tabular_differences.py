@@ -46,12 +46,13 @@ import torch
 
 from src import plots_differences as P
 from src.data_tabular import ALL, DATASETS, class_names, feature_names, load_tabular, split, standardize
+from src.attributions import integrated_gradients
 from src.mlp import ResidualMLP
 from tabular_suite import extract, train
 
-RANKINGS = ("method", "absdiff", "gradxdelta", "random", "floor")
-LABEL = {"method": "método (Δd na Gram conjunta)", "absdiff": "|Δx|", "gradxdelta": "grad × Δx",
-         "random": "ordem aleatória", "floor": "método na rede não treinada"}
+RANKINGS = ("method", "absdiff", "gradxdelta", "ig", "random", "floor")
+LABEL = {"method": r"método ($\Delta_f$ na Gram conjunta)", "absdiff": "|Δx|", "gradxdelta": "grad × Δx",
+         "ig": "gradientes integrados", "random": "ordem aleatória", "floor": "método na rede não treinada"}
 
 
 def joint_distances(model, rows: np.ndarray, device, target, shift: float) -> dict:
@@ -135,6 +136,7 @@ def run_one(name: str, seed: int, args, device) -> dict:
         orders = {
             "absdiff": np.argsort(-np.abs(xj - xi)),
             "gradxdelta": np.argsort(-gradxdelta(model, xi, xj, ci, cj, device)),
+            "ig": np.argsort(-integrated_gradients(model, xi, xj, ci, cj, device)),
             "random": rng.permutation(len(xi)),
         }
         for r, order in orders.items():
@@ -209,8 +211,8 @@ def write_report(runs: list[dict], args, out: Path) -> None:
         v = np.asarray(values, dtype=float)
         return f"{v.mean():.3f} ± {v.std():.3f}".replace(".", ",")
 
-    keys = [f"method@{eb}", "absdiff", "gradxdelta", "random", f"floor@{eb}"]
-    heads = [f"método ({eb})", "|Δx|", "grad×Δx", "aleatória", f"piso ({eb})"]
+    keys = [f"method@{eb}", "absdiff", "gradxdelta", "ig", "random", f"floor@{eb}"]
+    heads = [f"método ({eb})", "\\|Δx\\|", "grad×Δx", "grad. integrados", "aleatória", f"piso ({eb})"]
     lines = ["# Por que esta amostra teve outra classificação? — dados tabulares\n",
              f"Área sob a curva da fração de pares que passam à classe de j conforme os k primeiros "
              f"atributos de cada ranking são trocados (maior = o ranking põe primeiro o que decide). "
@@ -226,11 +228,11 @@ def write_report(runs: list[dict], args, out: Path) -> None:
               "| | " + " | ".join(blocks) + " |", "|---|" + "---|" * len(blocks)]
     for kind, label in (("method", "método"), ("floor", "piso")):
         lines.append(f"| {label} | " + " | ".join(pm([per_dataset[n][f'{kind}@{b}'] for n in names]) for b in blocks) + " |")
-    for ref in ("absdiff", "gradxdelta", "random"):
+    for ref in ("absdiff", "gradxdelta", "ig", "random"):
         lines.append(f"| {LABEL[ref]} | " + " | ".join(pm([per_dataset[n][ref] for n in names]) for _ in blocks) + " |")
     lines += ["", f"## Em que fração das {len(runs)} execuções o método supera cada referência\n",
           "Comparação entre as médias de cada execução (50 pares cada), não par a par.\n"]
-    for ref in ("absdiff", "gradxdelta", "random", f"floor@{eb}"):
+    for ref in ("absdiff", "gradxdelta", "ig", "random", f"floor@{eb}"):
         wins = np.mean([r["auc"][f"method@{eb}"] > r["auc"][ref] for r in runs])
         lines.append(f"- {LABEL.get(ref.split('@')[0], ref)}: {wins:.0%} das execuções")
     (out / "tables.md").write_text("\n".join(lines) + "\n")

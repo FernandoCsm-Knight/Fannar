@@ -29,7 +29,7 @@ T.use()
 
 import matplotlib.pyplot as plt  # noqa: E402,F401
 
-STAGES = [("params", r"$\mathbf{G}_W$"), ("activations", r"$\mathbf{G}_A$"), ("grads", r"$\mathbf{G}_\Gamma$")]
+STAGES = [("params", r"$\mathbf{G}_W$"), ("activations", r"$\mathbf{G}_A$"), ("grads", r"$\mathbf{G}_\Omega$")]
 
 
 def component(u: np.ndarray) -> np.ndarray:
@@ -78,7 +78,7 @@ def main() -> None:
     comps = [component(src[key]) for key, _ in STAGES]
     product = comps[0] * comps[1] * comps[2]
     panels = list(zip(comps, [t for _, t in STAGES])) + [
-        (product, r"$\mathbf{G}_W \circ \mathbf{G}_A \circ \mathbf{G}_\Gamma$"),
+        (product, r"$\mathbf{G}_W \circ \mathbf{G}_A \circ \mathbf{G}_\Omega$"),
         (centered_trace(product), r"$T_{\mathrm{tr}}(T_c(\cdot))$")]
     bounds = np.flatnonzero(np.diff(labels)) + 1
 

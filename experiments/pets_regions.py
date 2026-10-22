@@ -38,8 +38,8 @@ from src.pixel_energy import REPS, compute_maps, deletion_insertion, extract_pix
 from src.report import clean, fmt, table
 from src.train_pets import load_or_train, models_from
 
-TITLES = {"joint": r"conjunta $(W,A,\Gamma)$", "activations": r"só $A$", "params": r"só $W$",
-          "grads": r"só $\Gamma$", "gradcam": "Grad-CAM", "cross": "conjunta, rede aleatória",
+TITLES = {"joint": r"conjunta $(W,A,\Omega)$", "activations": r"só $A$", "params": r"só $W$",
+          "grads": r"só $\Omega$", "gradcam": "Grad-CAM", "cross": "conjunta, rede aleatória",
           "center": "só o centro", "random": "aleatório"}
 
 

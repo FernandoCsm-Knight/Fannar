@@ -8,7 +8,7 @@
 % `outputs/pets_regions/tables.md` e `outputs/tabular_differences/tables.md`.
 Este apêndice reúne os valores numéricos das leituras apresentadas na Seção \ref{sec:resultados}, por bloco da rede.
 
-\begin{table}[htbp]
+\begin{table}[pos=htbp]
 \centering
 \caption{Leituras da matriz de distância referidas ao comportamento da rede, por bloco. O piso é o controle cruzado: a geometria da rede não treinada medida contra o comportamento da rede treinada.}
 \label{tab:res_distancia}
@@ -38,7 +38,7 @@ Leitura & Representação & \texttt{stem} & \texttt{b1} & \texttt{b2} & \texttt{
 \end{tabular}}
 \end{table}
 
-\begin{table}[htbp]
+\begin{table}[pos=htbp]
 \centering
 \caption{Leituras espectrais por bloco. A contenção é a fração das direções de classe dentro de $V_r$; o coeficiente de variação (CV) e a AUC referem-se à razão de energia ortogonal $\widehat{E}_{\mathrm{ratio}}$. O controle é a Gram conjunta da rede não treinada.}
 \label{tab:res_espectro}
@@ -63,7 +63,7 @@ Leitura & Representação & \texttt{stem} & \texttt{b1} & \texttt{b2} & \texttt{
 \end{tabular}}
 \end{table}
 
-\begin{table}[htbp]
+\begin{table}[pos=htbp]
 \centering
 \caption{Fração de predições alteradas pela intervenção em cada bloco, para diferentes orçamentos relativos $\sigma$.}
 \label{tab:res_flip}
@@ -80,7 +80,7 @@ Não treinada, $\sigma = 2$ & 0,210 & 0,208 & 0,214 & 0,212 & 0,242 & 0,118 & 0,
 \end{tabular}}
 \end{table}
 
-\begin{table}[htbp]
+\begin{table}[pos=htbp]
 \centering
 \caption{Decomposição da Gram do método contra a Gram das ativações da mesma camada. As duas últimas leituras tratam cada parte da decomposição como uma geometria própria, após a projeção no cone semidefinido positivo.}
 \label{tab:res_cka}
@@ -105,7 +105,7 @@ Massa espectral descartada & Parte residual & 0,034 & 0,022 & 0,025 & 0,039 & 0,
 \end{tabular}}
 \end{table}
 
-\begin{table}[htbp]
+\begin{table}[pos=htbp]
 \centering
 \caption{Diferença entre as áreas sob a curva da margem normalizada ao remover os píxeis do menos para o mais relevante e do mais para o menos relevante, por bloco. Nas duas primeiras leituras a relevância é a energia do campo; na última, a proximidade a $s_0$. O piso cruzado é a mesma ordenação calculada na rede não treinada e aplicada à rede treinada; a ordem aleatória resulta em $0{,}001$ no CIFAR-10 e em $0{,}006$ na base de gatos e cachorros. Em \texttt{b6} o campo do gradiente isolado é indefinido.}
 \label{tab:res_campo}
@@ -139,7 +139,7 @@ Leitura & Representação & \texttt{stem} & \texttt{b1} & \texttt{b2} & \texttt{
 
 Esta seção reúne os diagnósticos da variante da Equação \eqref{eq:raiz}, em que o produto de Hadamard das componentes é substituído pela sua média geométrica. Esses diagnósticos não testam a proposição do trabalho, mas verificam se a variante se comporta como a teoria prevê e em quais leituras ela deve ser utilizada. A Tabela \ref{tab:apendice_raiz} reúne os valores discutidos a seguir.
 
-\begin{table}[htbp]
+\begin{table}[pos=htbp]
 \centering
 \caption{Comparação entre a Gram conjunta pelo produto de Hadamard e pela raiz $d$-ésima, por bloco.}
 \label{tab:apendice_raiz}

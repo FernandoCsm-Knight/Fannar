@@ -69,12 +69,15 @@ def class_margin_against(
 def correctness_auc(
     d: np.ndarray, labels: np.ndarray, preds: np.ndarray, n_classes: int = 10
 ) -> float:
-    """AUC da margem geometrica (contra o rotulo) prevendo o acerto da rede.
+    """AUC da margem geometrica (contra a predicao) prevendo o acerto da rede.
 
-    0,5 e o acaso. Le-se: a geometria sabe, sem olhar os logits, em quais imagens
-    a rede vai errar.
+    0,5 e o acaso. A margem agrupa os objetos pela classe que o modelo **prediz** e mede o
+    quanto cada um esta mais perto dos que receberam a sua propria predicao do que da classe
+    predita vizinha. O rotulo verdadeiro entra so como a resposta a prever (o acerto): usa-lo
+    tambem na margem tornaria a leitura circular, porque estar perto da propria classe
+    verdadeira ja e quase o mesmo que ser classificado nela, e o sinal nao existiria em uso.
     """
-    geo = class_margin_against(d, labels, labels, n_classes)
+    geo = class_margin_against(d, preds, preds, n_classes)
     correct = preds == labels
     pos, neg = geo[correct], geo[~correct]
     if len(pos) == 0 or len(neg) == 0:

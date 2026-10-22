@@ -1,31 +1,21 @@
-% Compilar com:  latexmk -pdf main.tex
-%
-% Os pacotes que nao vem no texlive-latex-base (babel-portuges, algorithms, algorithmicx,
-% multirow, booktabs, xcolor, enumitem, caption, float) foram instalados em ~/texmf com
-% `tlmgr --usermode`, a partir do arquivo historico do TeX Live 2021.
-\documentclass[11pt,a4paper]{article}
+\documentclass[a4paper,fleqn]{cas-sc}
 
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
-\usepackage[brazil]{babel}
-\usepackage{mathptmx}          % Times: as figuras usam Nimbus Roman, o clone metrico do Times
-\usepackage[a4paper,margin=2.5cm]{geometry}
-
+\usepackage[brazilian]{babel}
 \usepackage{amsmath,amssymb,amsthm}
-\usepackage{graphicx}
 \usepackage{multirow}
 \usepackage{booktabs}
 \usepackage{array}
-\usepackage{float}
-\usepackage[font=small,labelfont=bf]{caption}
 \usepackage{algorithm}
 \usepackage{algpseudocode}
-\usepackage{xcolor}
-\usepackage[square,authoryear]{natbib}
+\usepackage[authoryear,longnamesfirst]{natbib}
 \usepackage{url}
-\usepackage[hidelinks]{hyperref}
+\usepackage{xcolor}
 
-\graphicspath{{./}}
+\hypersetup{hypertexnames=false}
+
+\graphicspath{{figs/}{img/}}
 
 \theoremstyle{plain}
 \newtheorem{theorem}{Teorema}[section]
@@ -38,33 +28,72 @@
 
 \floatname{algorithm}{Algoritmo}
 
-\title{\textbf{Fannar}: Interpretabilidade Mecanicista por Tensores de Similaridade em Espaços de Hilbert com Núcleo Reprodutor}
-\author{%
-  \begin{tabular}{c}
-    Fernando C. S. Dal'Maria \quad Cristiane N. Nobre \quad Pedro Belchior\\[4pt]
-    \small Instituto de Ciências Exatas e Informática\\
-    \small Pontifícia Universidade Católica de Minas Gerais (PUC Minas), Belo Horizonte, MG, Brasil
-  \end{tabular}}
-\date{}
-
 \begin{document}
+
+\let\WriteBookmarks\relax
+\def\floatpagepagefraction{1}
+\def\textpagefraction{.001}
+
+\shorttitle{Fannar: interpretabilidade por tensores de similaridade}
+\shortauthors{Dal'Maria et al.}
+
+\title[mode=title]{Fannar: Interpretabilidade Mecanicista por Tensores de Similaridade em Espaços de Hilbert com Núcleo Reprodutor}
+
+\author[1]{Fernando C. S. Dal'Maria}[orcid=0000-0003-1942-2732]
+\cormark[1]
+\ead{fernandocsdm@gmail.com}
+\cortext[1]{Autor correspondente.}
+
+\author[1]{Pedro Belchior}
+% \ead{email}
+% \author[1]{Pedro Belchior}[orcid=0000-0000-0000-0000]
+
+\author[1]{Cristiane N. Nobre}
+% \ead{email}
+% \author[1]{Cristiane N. Nobre}[orcid=0000-0000-0000-0000]
+
+\affiliation[1]{
+  organization={Instituto de Ciências Exatas e Informática, Pontifícia Universidade Católica de Minas Gerais (PUC Minas)},
+  city={Belo Horizonte},
+  state={Minas Gerais},
+  country={Brasil}
+}
+
+\begin{abstract}
+Métodos de interpretabilidade pós-hoc costumam operar sobre uma única fonte de informação do modelo e raramente declaram que tipo de afirmação cada leitura sustenta. Este trabalho propõe o Fannar, um método geométrico, pós-hoc e de forma modelo-agnóstica, que associa a cada objeto fontes extraídas do modelo, representa a similaridade em cada fonte por um núcleo positivamente definido e compõe as matrizes de Gram pelo produto de Hadamard, o que realiza o produto tensorial dos RKHS correspondentes. A construção induz uma pseudométrica e uma decomposição da energia espectral bem definidas. A sua utilidade interpretativa é avaliada empiricamente por um protocolo que acompanha cada leitura de uma referência externa e de um piso de nulidade, em dez bases tabulares, no Oxford-IIIT Pet e no CIFAR-100, com perceptrons residuais, ResNet, transformador de visão e árvores de decisão. A geometria prevê a decisão e o erro do modelo acima do piso, concentra as direções de classe em poucos modos e acompanha a hierarquia semântica das classes, mas não antecipa o comportamento melhor do que a confiança do próprio modelo. A composição de fontes acrescenta o gradiente às ativações nas redes convolucionais, e as ablações mostram que o produto de Hadamard equivale à soma das fontes, enquanto a normalização angular é decisiva. A leitura contrastiva supera o SHAP e o LIME na \texttt{letter} e na \texttt{pendigits}, embora perca para o valor de Shapley exato e para os gradientes integrados, e recupera a explicação de uma árvore de decisão. Os resultados mostram em quais regimes a geometria recupera o comportamento do modelo e quais limitações surgem nas leituras espaciais e contrafactuais.
+\end{abstract}
+
+\begin{highlights}
+\item Fontes do modelo compostas por produto de Hadamard definem um único RKHS.
+\item A geometria prevê a decisão e o erro do modelo acima de um piso de nulidade.
+\item A geometria reflete o comportamento do modelo, mas não o antecipa.
+\item O produto de Hadamard equivale à soma. A normalização angular é decisiva.
+\item A leitura contrastiva supera SHAP e LIME e perde para o Shapley exato.
+\end{highlights}
+
+\begin{keywords}
+interpretabilidade mecanicista \sep inteligência artificial explicável \sep espaços de Hilbert com núcleo reprodutor \sep matrizes de Gram \sep produto tensorial \sep análise espectral
+\end{keywords}
+
 \maketitle
 
 \input{introduction}
-\input{background}
+\input{theoretical_background}
 \input{related_work}
 \input{theory}
-\input{gram}
-\input{distance}
-\input{metodologia}
-\input{resultados}
-\input{discussao}
+\input{kernel_pipeline}
+\input{representation_geometry}
+\input{methodology}
+\input{results}
+\input{discussion}
+\input{conclusion}
 
-\bibliographystyle{plainnat}
+
+\section*{Declarações}
+
+\textbf{Disponibilidade de dados e código.} As bases são públicas: as tabulares no repositório da UCI e no OpenML, o Oxford-IIIT Pet e o CIFAR-100 nas páginas dos seus autores. O código, com os scripts que reproduzem todos os experimentos e figuras, está em \url{https://github.com/FernandoCsm-Knight/Fannar}.
+
+\bibliographystyle{cas-model2-names}
 \bibliography{referencias}
-
-% O apendice ainda contem tabelas da versao anterior (CIFAR-10) e fica fora da compilacao
-% ate ser refeito com os experimentos atuais; nenhum texto do corpo faz referencia a ele.
-% \input{apendice}
 
 \end{document}

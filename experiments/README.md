@@ -1,15 +1,37 @@
-# Espaço de representação por núcleos: bases tabulares e Oxford-IIIT Pet
+# Espaço de representação por núcleos: bases tabulares, Oxford-IIIT Pet e CIFAR-100
 
-Implementação do método de `paper/` (tensor de similaridade em RKHS, pipeline núcleo-transformação)
+Implementação do método de `docs/` (tensor de similaridade em RKHS, pipeline núcleo-transformação)
 e dos testes que avaliam se o espaço de representação reflete o comportamento do modelo.
+
+## Reproduzir tudo do zero
+
+```bash
+python -m venv ../.venv && ../.venv/Scripts/pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
+../.venv/Scripts/pip install -e "..[all]" scipy seaborn shap lime dice-ml pyarrow
+bash run_tabular.sh ../.venv/Scripts/python          # dez bases, letter, sintético, árvore, figuras (~6 h)
+bash run_pendigits.sh ../.venv/Scripts/python        # estudos de caso na pendigits (~3 h)
+bash run_images.sh ../.venv/Scripts/python 8         # Pet (ResNet, ViT) e CIFAR-100, 8 sementes (~7 h)
+python ablations_stats.py && python ablations_figure.py && python semantics_figure.py
+python tree_case_figure.py --pairs 4 51              # pares típicos da semente 0
+```
+
+Medido numa RTX 4060 (8 GB). As figuras do artigo são copiadas de `outputs/` para `../docs/figs/`
+(`res_estabilidade` ← `tabular_suite/suite_fixed`, `res_pets` ← `pets_suite/suite_fixed`, `res_cifar` ←
+`cifar100_suite/suite_fixed`, `res_letter` ← `letter_case/case_study`, `res_pendigits` ←
+`pendigits_case/case_study`, `res_orcamento` ← `letter_budget/budget`, `res_arvore` ← `tree_case/tree_case`,
+`res_arvore_caminhos` ← `tree_case/tree_vs_method`, `res_campo_resnet`/`res_niveis` ← `pets_regions/`,
+`res_campo_vit` ← `pets_regions_vit/`, `res_diferencas` ← `tabular_differences/differences`,
+`res_complexidade` ← `complexity/complexity`, `disc_espaco` ← `discussion/scatter`,
+`gram_construcao` ← `methodology/gram_construcao`; `res_ablacoes` e `res_semantica` já saem em `../docs/figs/`).
 
 ## Dados
 
 | base | onde fica | o que é |
 |---|---|---|
-| 10 bases tabulares do OpenML | cache do scikit-learn (baixadas na primeira execução) | letter, pendigits, optdigits, satimage, segment, har, mfeat-factors, gas-drift, dna, covertype (subamostrada para 30 000); todas multiclasse |
+| 10 bases tabulares | OpenML pelo scikit-learn; se o OpenML não responder, os originais da UCI/StatLog em `~/Desktop/torch/data/tabular/` (`src/data_mirror.py`, mesma ordem de classes; `FANNAR_DATA=openml\|mirror` força um dos dois) | letter, pendigits, optdigits, satimage, segment, har, mfeat-factors, gas-drift, dna, covertype (subamostrada para 30 000); todas multiclasse |
 | Titanic (OpenML 40945) | idem | só exemplo de leitura: 11 atributos com nome, binário, fora da suíte de estabilidade |
-| Oxford-IIIT Pet | `~/Desktop/torch/data/oxford-iiit-pet` (imagens e anotações oficiais); cache em `outputs/pets_128.npz` | 37 raças, 7 349 imagens, máscara do animal em cada imagem (só verdade externa, nunca entra no treino) |
+| Oxford-IIIT Pet | `~/Desktop/torch/data/oxford-iiit-pet` (imagens e anotações oficiais); cache em `outputs/pets_128.npz` | 37 raças, 7 349 imagens, máscara do animal em cada imagem (só verdade externa, nunca entra no treino); a espécie é a referência semântica de P9 |
+| CIFAR-100 | `~/Desktop/torch/data/cifar100/cifar-100-python`; cache em `outputs/cifar100_32.npz` | 100 classes em 20 superclasses (referência semântica de P9, nunca entra no treino) |
 
 ## Scripts
 
@@ -23,6 +45,32 @@ e dos testes que avaliam se o espaço de representação reflete o comportamento
 | `titanic_example.py` | exemplo legível da mesma explicação, com atributos que têm nome (sexo, idade, classe) | `outputs/titanic_differences/exemplo.md` |
 | `letter_case_study.py` | estudo de caso na `letter`: o método contra o SHAP (Shapley exato com j de referência e SHAP da biblioteca) e contra árvores (substituta e nos rótulos), par a par e em importância global | `outputs/letter_case/` |
 | `tree_case_study.py` | o método aplicado a uma árvore de decisão (instanciação sem rede: fontes caminho, folga e classes por profundidade); recupera a explicação da própria árvore? | `outputs/tree_case/` |
+
+### Ablações e estatística (Subseção `subsec:adicionais` do artigo)
+
+| script | item | saída |
+|---|---|---|
+| `ablations.py` | (a) produto × soma (= concatenação) × sem T_a × sem J; (b) margem geométrica × softmax, margem dos logits, trust score e Mahalanobis; (c) k-vizinhos nos logits e nas ativações finais | `outputs/ablations/<família>/` |
+| `synthetic_counterfactual.py` | (d) leitura de pares com verdade de base sintética, contra Shapley exato, gradientes integrados, LIME e DiCE (`--dice`) | `outputs/synthetic_counterfactual/` |
+| `tree_case_study.py` | (e) o ranking `no_path` (folga ∘ classes) entra na tabela e na datação | `outputs/tree_case/` |
+| `ablations_stats.py` | (f) datação sem tendência; (h) Wilcoxon + Holm, IC bootstrap, Friedman + Nemenyi — só lê os JSONs, não treina | `outputs/stats/` |
+| `ablations_figure.py` | figura `res_ablacoes.pdf` | `../docs/figs/` |
+
+Ordem de execução (dependências: `pip install -e "..[all]" scipy seaborn shap lime`, e `dice-ml` para o DiCE):
+
+```bash
+python ablations.py --family tabular --seeds 5           # horas: re-treina os MLPs
+python ablations.py --family pets --arch resnet --seeds 3 # usa outputs/pets_models/ se existir
+python ablations.py --family pets --arch vit --seeds 3
+python synthetic_counterfactual.py --seeds 5 --pairs 100 --dice
+python tree_case_study.py --seeds 5 --pairs 100 --out outputs/tree_case_v2   # os runs antigos não têm `no_path`
+python ablations_stats.py --suite pets_vit=<pasta da suíte do transformador>
+python ablations_figure.py
+```
+
+Mais sementes no Pet (item (h)) são só `--seeds N` em `pets_suite.py` e em `ablations.py`: com três, o menor p
+possível do Wilcoxon é 0,25, e `ablations_stats.py` informa esse piso em vez de omitir o teste. O item (g) do
+protocolo (modelos pré-treinados e outra base de imagens) não tem script: ficou como trabalho futuro no texto.
 
 O modelo do Pet é treinado sob demanda por `src/train_pets.py` (`python -m src.train_pets --seed 0`) e
 guardado em `outputs/pets_models/` junto com o estado inicial, que é o controle não treinado.

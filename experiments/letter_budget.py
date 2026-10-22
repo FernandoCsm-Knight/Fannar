@@ -124,7 +124,7 @@ def run_one(seed: int, args, device) -> dict:
 
 def write_report(runs, out: Path) -> None:
     budgets, lb = runs[0]["budgets"], runs[0]["lime_budgets"]
-    L = ["# Mesmo orçamento de avaliações: método × Shapley amostrado × LIME (`letter`)\n",
+    L = [f"# Mesmo orçamento de avaliações: método × Shapley amostrado × LIME (`{DATASET}`)\n",
          f"{len(runs)} sementes; o método custa {runs[0]['method_cost']['rows']} linhas numa passagem direta e numa "
          f"reversa (~{runs[0]['method_cost']['forward_equivalent']} passagens diretas). Média ± desvio entre sementes.\n",
          f"Método: AUC {pm([r['auc']['method'] for r in runs])}, corte da árvore em 1º "
@@ -193,8 +193,8 @@ def main() -> None:
     ap.add_argument("--weight-decay", type=float, default=1e-4)
     ap.add_argument("--shift", type=float, default=1.0)
     ap.add_argument("--fixed-target", type=int, default=0)
-    ap.add_argument("--reference", default="outputs/letter_case/runs")
-    ap.add_argument("--out", default="outputs/letter_budget")
+    ap.add_argument("--reference", default=f"outputs/{DATASET}_case/runs")
+    ap.add_argument("--out", default=f"outputs/{DATASET}_budget")
     args = ap.parse_args()
     out = Path(args.out)
     (out / "runs").mkdir(parents=True, exist_ok=True)

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import numpy as np
+import seaborn as sns
 
 from . import theme as T
 
@@ -14,6 +15,7 @@ STYLE = {
     "method": T.series("joint"),
     "absdiff": T.series("activations"),
     "gradxdelta": T.series("rsa_euclid"),
+    "ig": {"color": sns.color_palette("colorblind", 10)[9], "marker": "P", "markeredgewidth": 0.0},
     "random": {**T.control("ordem aleatória", marker="o"), "linestyle": (0, (1.0, 1.6))},
     "floor": T.control("método na rede não treinada"),
 }
@@ -34,7 +36,8 @@ def plot_tabular_differences(runs: list[dict], names: list[str], blocks: list[st
         per[n] = {k: np.mean([r["curves"][k] for r in rs], 0) for k in rs[0]["curves"]}
     fig, axes = T.grid(1, 2, width="full", height=2.6)
     ax = axes[0, 0]
-    for key in (f"method@{block}", "absdiff", "gradxdelta", "random", f"floor@{block}"):
+    refs = [k for k in ("absdiff", "gradxdelta", "ig", "random") if k in runs[0]["curves"]]
+    for key in (f"method@{block}", *refs, f"floor@{block}"):
         kind = key.split("@")[0]
         curves = np.array([per[n][key] for n in names])
         m, s = curves.mean(0), curves.std(0)
@@ -56,7 +59,7 @@ def plot_tabular_differences(runs: list[dict], names: list[str], blocks: list[st
         m, s = vals.mean(0), vals.std(0)
         ax.fill_between(x, m - s, m + s, color=STYLE[kind]["color"], alpha=0.12, linewidth=0)
         ax.plot(x, m, lw=1.4, ms=3.2, **{**STYLE[kind], "label": labels[kind]})
-    for ref in ("absdiff", "gradxdelta", "random"):
+    for ref in refs:
         v = np.mean([_area(per[n][ref], grid) for n in names])
         style = {k: v2 for k, v2 in STYLE[ref].items() if k in ("color", "linestyle")}
         ax.axhline(v, lw=1.0, **style, label=labels[ref])

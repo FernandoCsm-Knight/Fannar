@@ -49,10 +49,14 @@ from src.data_tabular import class_names, feature_names, load_tabular, split, st
 from tabular_differences import area
 
 SOURCES = ("caminho", "folga", "classes")
-RANKINGS = ("method", "shapley", "absdiff", "random", "floor")
-LABEL = {"method": "método (Δd na Gram conjunta)", "shapley": "Shapley exato com j de referência",
+# ablacao (e) da Subsecao `subsec:adicionais`: o caminho ja codifica o no de separacao, entao a
+# recuperacao do corte so e evidencia do metodo se sobreviver sem essa fonte
+NO_PATH = ("folga", "classes")
+RANKINGS = ("method", "no_path", "shapley", "absdiff", "random", "floor")
+LABEL = {"method": r"método ($\Delta_f$ na Gram conjunta)", "shapley": "Shapley exato com j de referência",
          "absdiff": "|Δx|", "random": "aleatória entre os que diferem",
          "floor": "método na árvore de rótulos embaralhados",
+         "no_path": "método sem a fonte de caminho (folga ∘ classes)",
          "caminho": "só caminho", "folga": "só folga", "classes": "só classes"}
 
 
@@ -172,6 +176,7 @@ def run_one(seed: int, args) -> dict:
         t0 = time.perf_counter()
         scores = method_scores(geo, xi, xj, depths)
         t_method.append(time.perf_counter() - t0)
+        scores_np = method_scores(geo, xi, xj, depths, NO_PATH)
         floor = method_scores(geo_u, xi, xj, [geo_u.max_depth])[geo_u.max_depth]
         single = {s: method_scores(geo, xi, xj, [full], (s,))[full] for s in SOURCES}
         t0 = time.perf_counter()
@@ -181,7 +186,8 @@ def run_one(seed: int, args) -> dict:
 
         random_score = np.zeros(F)
         random_score[differ] = rng.random(len(differ)) + 1.0
-        orders = {"method": order_of(scores[full], rng), "shapley": order_of(phi, rng),
+        orders = {"method": order_of(scores[full], rng), "no_path": order_of(scores_np[full], rng),
+                  "shapley": order_of(phi, rng),
                   "absdiff": order_of(np.abs(xj - xi), rng), "random": order_of(random_score, rng),
                   "floor": order_of(floor, rng)} | {s: order_of(single[s], rng) for s in SOURCES}
         k_needed = {}
@@ -195,13 +201,15 @@ def run_one(seed: int, args) -> dict:
         cut_depth = int(geo.depth[node])  # o no testa f na profundidade dele; os filhos ja diferem
         # o corte "vira o 1º" quando o seu Δd e positivo e maximo; sem isso, profundidades em que
         # todo Δd e zero o poriam em 1º pelo desempate aleatorio
-        first_top = next((ell for ell in depths
-                          if scores[ell][f_cut] > 1e-12 and scores[ell][f_cut] >= scores[ell].max()), None)
+        def first_top_of(sc):
+            return next((ell for ell in depths
+                         if sc[ell][f_cut] > 1e-12 and sc[ell][f_cut] >= sc[ell].max()), None)
+        first_top, first_top_np = first_top_of(scores), first_top_of(scores_np)
         records.append({
             "i": int(i), "j": j, "pred_i": ci, "pred_j": cj, "n_differ": int(len(differ)),
             "raw_i": xi.tolist(), "raw_j": xj.tolist(), "cut_feature": f_cut, "cut_depth": cut_depth,
             "cut_threshold": float(tree.tree_.threshold[node]), "leaf_depth_i": int(geo.depth[tree.apply(xi[None].astype(np.float32))[0]]),
-            "first_top_depth": first_top, "k_min": k_min, "k_needed": k_needed,
+            "first_top_depth": first_top, "first_top_depth_no_path": first_top_np, "k_min": k_min, "k_needed": k_needed,
             "method_full": scores[full].tolist(), "shapley": phi.tolist(),
             "method_by_depth": {str(ell): scores[ell].tolist() for ell in depths},
             "positions": {k: rank_of(o, f_cut) for k, o in orders.items()},
@@ -230,7 +238,7 @@ def run_one(seed: int, args) -> dict:
 def write_report(runs: list[dict], args, out: Path) -> None:
     feats, classes = feature_names(DATASET), class_names(DATASET)
     pairs = [p for r in runs for p in r["pairs"]]
-    L = ["# O método aplicado a uma árvore de decisão — `letter`\n",
+    L = [f"# O método aplicado a uma árvore de decisão — `{DATASET}`\n",
          f"Árvore treinada nos rótulos (min_samples_leaf = {args.min_leaf}); {len(runs)} sementes × {args.pairs} pares "
          f"(i acertada pela árvore, j a mais próxima com outra predição da árvore). Método na profundidade máxima, "
          "salvo menção. Média ± desvio entre sementes.\n",
@@ -258,6 +266,14 @@ def write_report(runs: list[dict], args, out: Path) -> None:
           f"- antes: {np.mean(diff < 0):.0%}; depois: {np.mean(diff > 0):.0%}; nunca vira o 1º: {never:.0%}",
           f"- Spearman entre as duas profundidades: {fmt(spearmanr(first, cut)[0])} "
           f"(profundidade da separação: mediana {np.median(cut):.0f}, de {cut.min()} a {cut.max()})\n"]
+    if all("first_top_depth_no_path" in p for p in pairs):
+        dnp = np.array([p["first_top_depth_no_path"] - (p["cut_depth"] + 1) for p in pairs
+                        if p["first_top_depth_no_path"] is not None])
+        never_np = np.mean([p["first_top_depth_no_path"] is None for p in pairs])
+        L += ["Sem a fonte de caminho (ablação (e)), sobre todos os pares:\n",
+              f"- exatamente na profundidade da separação: {np.sum(dnp == 0) / len(pairs):.0%}",
+              f"- antes: {np.sum(dnp < 0) / len(pairs):.0%}; depois: {np.sum(dnp > 0) / len(pairs):.0%}; "
+              f"nunca vira o 1º: {never_np:.0%}\n"]
 
     L += ["## 3. Teste contrafactual na própria árvore\n",
           "AUC da fração de pares classificados como j conforme os k primeiros atributos são trocados, e o número "
@@ -313,7 +329,7 @@ def main() -> None:
     ap.add_argument("--min-leaf", type=int, default=3)
     ap.add_argument("--global-samples", type=int, default=1000)
     ap.add_argument("--examples", type=int, default=4)
-    ap.add_argument("--out", default="outputs/tree_case")
+    ap.add_argument("--out", default=("outputs/tree_case" if DATASET == "letter" else f"outputs/tree_case_{DATASET}"))
     args = ap.parse_args()
     out = Path(args.out)
     (out / "runs").mkdir(parents=True, exist_ok=True)
