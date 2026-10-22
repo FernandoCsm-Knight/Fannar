@@ -23,7 +23,7 @@ Building blocks::
 from . import kernels, readings, transforms
 from .interpreter import Interpreter
 from .kernels import RBF, Cosine, FunctionKernel, Kernel, Linear, Polynomial
-from .pairs import PairExplanation
+from .pairs import ErrorExplanation, PairExplanation
 from .pipeline import (PRESETS, Component, KernelPipeline, paper_pipeline, positions_pipeline,
                        single_source)
 from .readings import evaluate
@@ -36,7 +36,7 @@ from .transforms import (Transform, angular, center, frobenius_normalize, identi
 __version__ = "0.3.0"
 
 __all__ = [
-    "Interpreter", "GramSpace", "KernelPipeline", "Component", "Report", "PairExplanation",
+    "Interpreter", "GramSpace", "KernelPipeline", "Component", "Report", "PairExplanation", "ErrorExplanation",
     "Sources", "TorchSources", "TreeSources", "FunctionSources",
     "Kernel", "Linear", "Cosine", "RBF", "Polynomial", "FunctionKernel",
     "Transform", "identity", "center", "trace_normalize", "frobenius_normalize", "max_eig_normalize",

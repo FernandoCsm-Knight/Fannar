@@ -8,6 +8,8 @@
 >>> interp.plot_embedding(); interp.plot_gram("b2"); interp.plot_spectrum("b2")
 >>> expl = interp.explain_pair(0)           # nearest object with another prediction
 >>> expl.top(5); expl.plot()
+>>> errs = interp.explain_errors()          # features that keep the errors away from their class
+>>> errs.top(5); errs.plot()
 """
 
 from __future__ import annotations
@@ -16,7 +18,8 @@ from typing import Callable, Sequence
 
 import numpy as np
 
-from .pairs import PairExplanation, curve_area, nearest_unlike, pair_scores, swap_curve
+from .pairs import (ErrorExplanation, PairExplanation, curve_area, nearest_correct, nearest_unlike,
+                    pair_scores, swap_curve)
 from .pipeline import KernelPipeline, get_pipeline, positions_pipeline
 from .readings import evaluate as evaluate_space
 from .report import Report
@@ -202,6 +205,51 @@ class Interpreter:
         return PairExplanation(i, j, X[i], X[j], scores, int(self.predictions[i]), int(self.predictions[j]),
                                self.feature_names)
 
+    def explain_errors(self, layers: Sequence[str] | None = None, against: str = "correct",
+                       max_errors: int | None = None, reference: int = 100, seed: int = 0) -> ErrorExplanation:
+        """Which features drive the model's errors, aggregated over the misclassified objects.
+
+        Each error ``i`` is explained as a pair against a partner ``j``: with ``against="correct"``
+        (default) the nearest object correctly predicted as the true class of ``i`` (falling back
+        to the nearest unlike object when that class has none), so the shares say which features
+        keep ``i`` away from its class in the representation space; with ``against="unlike"``, the
+        nearest object with another prediction, as in :meth:`explain_pair`. ``max_errors`` caps the
+        number of errors and ``reference`` the number of correctly predicted objects explained the
+        same way as a baseline (both sampled with ``seed``; ``reference=0`` skips it).
+        Vector inputs only."""
+        if self.y is None:
+            raise ValueError("explaining errors needs the true labels `y`")
+        if against not in ("correct", "unlike"):
+            raise ValueError("against must be 'correct' or 'unlike'")
+        self._ensure()
+        X, pred, rng = self._matrix(), self.predictions, np.random.default_rng(seed)
+        errors = np.flatnonzero(pred != self.y)
+        if len(errors) == 0:
+            raise ValueError("the model makes no errors on these objects")
+        if max_errors is not None and len(errors) > max_errors:
+            errors = np.sort(rng.choice(errors, size=max_errors, replace=False))
+        partners = []
+        for i in errors:
+            j = nearest_correct(X, self.y, pred, int(i)) if against == "correct" else None
+            partners.append(nearest_unlike(X, pred, int(i)) if j is None else j)
+        partners = np.array(partners)
+        correct = np.flatnonzero(pred == self.y)
+        correct = np.sort(rng.choice(correct, size=min(reference, len(correct)), replace=False))
+        return ErrorExplanation(errors, partners, self.y[errors], pred[errors],
+                                self._pair_shares(X, errors, partners, layers), X[errors], X[partners],
+                                self._pair_shares(X, correct, [nearest_unlike(X, pred, int(i)) for i in correct], layers),
+                                {int(c): int((self.y == c).sum()) for c in np.unique(self.y)},
+                                self.feature_names, self.class_names)
+
+    def _pair_shares(self, X, rows, partners, layers) -> dict[str, np.ndarray]:
+        """Normalised positive ``Delta d`` of every ``(rows[e], partners[e])`` pair, per layer."""
+        out = {}
+        for i, j in zip(rows, partners):
+            for layer, s in pair_scores(self.extractor, self.pipeline, X[i], X[j], layers).items():
+                s = np.maximum(s, 0)
+                out.setdefault(layer, []).append(s / s.sum() if s.sum() > 0 else s)
+        return {layer: np.stack(v) for layer, v in out.items()}
+
     def swap_test(self, pairs: int | Sequence[tuple[int, int]] = 50, layer: str | None = None,
                   predict: Callable | None = None, seed: int = 0) -> dict:
         """Swap-test area per ranking (method, |Delta x|, random among differing features),
@@ -261,6 +309,9 @@ class Interpreter:
             rows["floor"] = [self.floor_space(layer) for layer in layers]
         colors = self.predictions if color_by == "prediction" else self.y
         return plot_embedding(rows, layers, colors, self.y, self.predictions, self.class_names)
+
+    def plot_errors(self, k: int | None = None, layer: str | None = None, rows: str = "class", **kw):
+        return self.explain_errors(**kw).plot(k, layer, rows)
 
     def plot_gram(self, layer: str):
         from .plots import plot_gram

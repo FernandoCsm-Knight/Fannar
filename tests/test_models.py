@@ -129,3 +129,21 @@ def test_custom_extractor_and_own_grams():
     K = feats @ feats.T
     sp = interp.space_from_grams({"mine": K})
     assert sp.n == 60 and sp.is_psd()
+
+
+def test_explain_errors_aggregates_pairs_and_plots():
+    model, _ = trained_mlp(*make_data(seed=1))
+    X, y = make_data(seed=2)                # held out: the model fits its training set
+    interp = fa.Interpreter(model, X, y, layers=["1", "3"], feature_names=[f"f{t}" for t in range(6)])
+    errs = interp.explain_errors(max_errors=8)
+    n = len(errs.errors)
+    assert 0 < n <= 8 and np.all(interp.predictions[errs.errors] != y[errs.errors])
+    assert set(errs.layers) == {"1", "3"} and errs.shares["3"].shape == (n, 6)
+    assert np.all(errs.shares["3"].sum(1) <= 1 + 1e-9)
+    assert sum(c for _, _, c in errs.confusions()) == n and len(errs.top(3)) == 3
+    i, j = errs.pairs[0]
+    np.testing.assert_allclose(errs.shares["3"][0], interp.explain_pair(i, j).shares("3"))
+    assert errs.reference_shares("3").shape == (6,) and np.all(np.abs(errs.direction("3")) <= 1)
+    assert set(errs.by_class()) == set(np.unique(errs.true))
+    assert errs.plot(k=4).axes and errs.plot(rows="confusion").axes
+    assert 0 <= interp.swap_test(errs.pairs, layer="3")["method"] <= 1

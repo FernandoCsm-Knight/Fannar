@@ -167,6 +167,108 @@ def plot_pair(expl, k: int = 8):
     return fig
 
 
+def plot_errors(expl, k: int | None = None, layer: str | None = None, rows: str = "class"):
+    """Which features the model's errors hinge on, by true class (``rows="class"``) or by
+    true→predicted confusion (``rows="confusion"``).
+
+    * matrix: columns are the features (the ``k`` with the largest mean share over all errors),
+      cells the mean share of the feature among the row's errors, with an arrow for the direction
+      (↑: the errors have lower values than the nearest correct object of their true class; ↓:
+      higher);
+    * top: mean share over the errors against the mean share over correctly predicted objects
+      (how much the feature matters to the model in general);
+    * right: errors per row, and the error rate of the class (or the fraction of all errors).
+    """
+    plt = _plt()
+    layer = layer or expl.layers[-1]
+    cols = expl.ranking(layer)[:k]
+    names = [expl.names[f] for f in cols]
+    cname = (lambda c: str(expl.class_names[c])) if expl.class_names else (lambda c: f"class {c}")
+    if rows == "class":
+        keys = sorted(expl.support) or sorted(set(expl.true.tolist()))
+        masks = [expl.true == c for c in keys]
+        labels = [cname(c) for c in keys]
+        totals = [expl.support.get(c, int(m.sum())) for c, m in zip(keys, masks)]
+    elif rows == "confusion":
+        confs = expl.confusions()
+        masks = [(expl.true == a) & (expl.pred == b) for a, b, _ in confs]
+        labels = [f"{cname(a)} → {cname(b)}" for a, b, _ in confs]
+        totals = [len(expl.errors)] * len(confs)
+    else:
+        raise ValueError("rows must be 'class' or 'confusion'")
+    mat = np.full((len(masks), len(cols)), np.nan)
+    arrows = np.zeros_like(mat)
+    for r, m in enumerate(masks):
+        if m.any():
+            mat[r], arrows[r] = expl.mean_shares(layer, m)[cols], expl.direction(layer, m)[cols]
+
+    nr, nc = len(masks), len(cols)
+    fig = plt.figure(figsize=(max(7.5, 0.8 * nc + 4.2), 2.6 + 0.48 * nr))
+    gs = fig.add_gridspec(2, 2, height_ratios=[1.7, max(0.48 * nr, 1.2)], width_ratios=[0.8 * nc, 2.6],
+                          hspace=0.08, wspace=0.05)
+    ax_top, ax_note = fig.add_subplot(gs[0, 0]), fig.add_subplot(gs[0, 1])
+    ax_mat = fig.add_subplot(gs[1, 0], sharex=ax_top)
+    ax_rate = fig.add_subplot(gs[1, 1], sharey=ax_mat)
+
+    x = np.arange(nc)
+    err_share, ref = expl.mean_shares(layer)[cols], expl.reference_shares(layer)
+    width = 0.38 if ref is not None else 0.6
+    ax_top.bar(x - (width / 2 if ref is not None else 0), err_share, width, color=OKABE_ITO[0], label="over the errors")
+    if ref is not None:
+        ax_top.bar(x + width / 2, ref[cols], width, color="0.75", label="over correct predictions")
+    for t, v in enumerate(err_share):
+        ax_top.text(t - (width / 2 if ref is not None else 0), v, f"{v:.0%}", ha="center", va="bottom", fontsize=7)
+    top = max(err_share.max(), 0 if ref is None else ref[cols].max())
+    ax_top.set_ylim(0, top * 1.25 + 1e-12)
+    ax_top.set_ylabel("mean share", fontsize=8)
+    ax_top.set_title(f"features behind the errors · layer {layer} · {len(expl.errors)} errors", fontsize=9, loc="left")
+    ax_top.legend(fontsize=7, frameon=False, loc="upper right")
+    ax_top.tick_params(labelbottom=False)
+    _style(ax_top)
+
+    cmap = _plt().get_cmap("Blues").with_extremes(bad="0.94")
+    vmax = max(np.nanmax(mat) if np.isfinite(mat).any() else 0, 1e-12)
+    ax_mat.imshow(np.ma.masked_invalid(mat), cmap=cmap, vmin=0, vmax=vmax, aspect="auto")
+    for r in range(nr):
+        for c in range(nc):
+            v = mat[r, c]
+            if np.isnan(v):
+                continue
+            a = arrows[r, c]
+            mark = (" ↑" if a > 0 else " ↓") if abs(a) >= 1 / 3 and v >= 0.02 else ""
+            ax_mat.text(c, r, f"{v:.0%}{mark}", ha="center", va="center", fontsize=7.5,
+                        color="white" if v > 0.6 * vmax else "0.15")
+    ax_mat.set_xticks(x)
+    ax_mat.set_xticklabels(names, fontsize=8, rotation=40 if max(map(len, names)) > 4 else 0,
+                           ha="right" if max(map(len, names)) > 4 else "center")
+    ax_mat.set_yticks(range(nr)); ax_mat.set_yticklabels(labels, fontsize=8)
+    ax_mat.set_xticks(np.arange(nc + 1) - 0.5, minor=True); ax_mat.set_yticks(np.arange(nr + 1) - 0.5, minor=True)
+    ax_mat.grid(which="minor", color="white", linewidth=1.5); ax_mat.tick_params(which="minor", length=0)
+    for side in ax_mat.spines.values():
+        side.set_visible(False)
+    ax_mat.set_ylabel("true class" if rows == "class" else "true → predicted", fontsize=8)
+
+    counts = np.array([int(m.sum()) for m in masks])
+    rate = counts / np.maximum(totals, 1)
+    ax_rate.barh(np.arange(nr), rate, height=0.6, color=OKABE_ITO[3])
+    for r in range(nr):
+        txt = f"{counts[r]}/{totals[r]} ({rate[r]:.0%})" if rows == "class" else f"{counts[r]} ({rate[r]:.0%})"
+        ax_rate.text(rate[r], r, " " + txt, va="center", fontsize=7)
+    ax_rate.set_xlim(0, max(rate.max(), 1e-12) * 1.9)
+    ax_rate.set_xlabel("error rate" if rows == "class" else "share of the errors", fontsize=8)
+    ax_rate.tick_params(labelleft=False, left=False)
+    _style(ax_rate)
+
+    ax_note.axis("off")
+    ax_note.text(0.06, 0.95, "how to read\n"
+                 "cell: share of the feature in what\n  separates the row's errors from\n"
+                 "  the nearest correct object of\n  their true class\n"
+                 "↑  errors have lower values\n↓  errors have higher values\n"
+                 "grey bar: same share over correct\n  predictions (general relevance)",
+                 va="top", fontsize=7, color="0.25", linespacing=1.35, transform=ax_note.transAxes)
+    return fig
+
+
 def plot_energy_map(energy: np.ndarray, image=None):
     """Retained-energy map of one input, optionally over the image (``(H, W[, 3])`` in [0, 1])."""
     plt = _plt()

@@ -23,3 +23,17 @@ def test_tree_interpreter_recovers_the_split():
     expl = interp2.explain_pair(120, 121)
     assert expl.ranking()[0] == 2
     assert interp2.plot_embedding(include_baselines=False).axes
+
+
+def test_explain_errors_points_to_the_feature_that_would_fix_them():
+    rng = np.random.default_rng(0)
+    X = rng.uniform(0, 10, (400, 5))
+    y = (X[:, 2] > 5).astype(int) + 2 * (X[:, 4] > 5).astype(int)
+    tree = sk.DecisionTreeClassifier(max_depth=4, random_state=0).fit(X, y)
+    Z = X[:150]
+    truth = tree.predict(Z)
+    wrong = Z[:, 0] > 8.5                   # the "true" class differs in the bit of feature 2
+    truth[wrong] ^= 1
+    errs = fa.Interpreter(tree, Z, truth).explain_errors()
+    assert set(errs.errors) == set(np.flatnonzero(wrong))
+    assert errs.ranking()[0] == 2 and errs.plot().axes
