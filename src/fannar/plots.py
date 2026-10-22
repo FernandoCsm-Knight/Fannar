@@ -36,9 +36,11 @@ def _class_colors(n: int) -> list:
 
 # ---------------------------------------------------------------------- readings
 def plot_report(report: Report, readings=None):
-    """One panel per reading, one line per representation, layers on the x axis."""
+    """One panel per reading, one line per representation, layers on the x axis. Readings that are
+    undefined everywhere (e.g. the confusion agreement with fewer than 5 classes) are left out."""
     plt = _plt()
-    readings = [r for r in (readings or report.readings) if r != "rank"]
+    readings = [r for r in (readings or report.readings) if r != "rank"
+                and any(np.isfinite(report.series(r, rep)).any() for rep in report.representations)]
     ncol = min(3, len(readings))
     nrow = int(np.ceil(len(readings) / ncol))
     fig, axes = plt.subplots(nrow, ncol, figsize=(3.4 * ncol, 2.6 * nrow), squeeze=False)
@@ -254,7 +256,7 @@ def plot_errors(expl, k: int | None = None, layer: str | None = None, rows: str 
     for r in range(nr):
         txt = f"{counts[r]}/{totals[r]} ({rate[r]:.0%})" if rows == "class" else f"{counts[r]} ({rate[r]:.0%})"
         ax_rate.text(rate[r], r, " " + txt, va="center", fontsize=7)
-    ax_rate.set_xlim(0, max(rate.max(), 1e-12) * 1.9)
+    ax_rate.set_xlim(0, min(max(rate.max(), 1e-12) * 1.9, 1.0))  # labels may run past 1: a rate never does
     ax_rate.set_xlabel("error rate" if rows == "class" else "share of the errors", fontsize=8)
     ax_rate.tick_params(labelleft=False, left=False)
     _style(ax_rate)
