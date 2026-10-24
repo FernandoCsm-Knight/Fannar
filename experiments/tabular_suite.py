@@ -1,4 +1,4 @@
-"""Espaco de representacao em 10 bases tabulares, com varias sementes.
+"""Espaco de representacao nas bases tabulares de `DATASETS` (20), com varias sementes.
 
 Mede, por bloco do MLP residual, as leituras de `src/suite.py` -- geometria contra a decisao,
 espectro, comparacao com A, Γ e RSA isolados, decomposicao contra a CKA e datacao por

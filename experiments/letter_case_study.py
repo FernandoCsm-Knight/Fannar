@@ -358,7 +358,7 @@ def run_one(seed: int, args, device) -> dict:
         }
         if dice is not None:
             t0 = time.perf_counter()
-            attributions["dice"] = dice_scores(dice, xi, cj, args.dice_cfs, rng)
+            attributions["dice"] = dice_scores(dice, xi, cj, args.dice_cfs, rng, xj=xj)
             timings["dice"].append(time.perf_counter() - t0)
         orders = {k: np.argsort(-v, kind="stable") for k, v in attributions.items()}
         orders["random"] = np.concatenate([shuffled, rest])

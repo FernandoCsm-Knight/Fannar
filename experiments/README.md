@@ -12,17 +12,15 @@ bash run_tabular.sh ../.venv/Scripts/python          # dez bases, letter, sinté
 bash run_pendigits.sh ../.venv/Scripts/python        # estudos de caso na pendigits (~3 h)
 bash run_images.sh ../.venv/Scripts/python 8         # Pet (ResNet, ViT) e CIFAR-100, 8 sementes (~7 h)
 python ablations_stats.py && python ablations_figure.py && python semantics_figure.py
+python results_figures.py
 python tree_case_figure.py --pairs 4 51              # pares típicos da semente 0
 ```
 
 Medido numa RTX 4060 (8 GB). As figuras do artigo são copiadas de `outputs/` para `../docs/figs/`
-(`res_estabilidade` ← `tabular_suite/suite_fixed`, `res_pets` ← `pets_suite/suite_fixed`, `res_cifar` ←
-`cifar100_suite/suite_fixed`, `res_letter` ← `letter_case/case_study`, `res_pendigits` ←
-`pendigits_case/case_study`, `res_orcamento` ← `letter_budget/budget`, `res_arvore` ← `tree_case/tree_case`,
-`res_arvore_caminhos` ← `tree_case/tree_vs_method`, `res_campo_resnet`/`res_niveis` ← `pets_regions/`,
-`res_campo_vit` ← `pets_regions_vit/`, `res_diferencas` ← `tabular_differences/differences`,
-`res_complexidade` ← `complexity/complexity`, `disc_espaco` ← `discussion/scatter`,
-`gram_construcao` ← `methodology/gram_construcao`; `res_ablacoes` e `res_semantica` já saem em `../docs/figs/`).
+(`res_complexidade` ← `complexity/complexity`, `res_arvore_caminhos` ← `tree_case/tree_vs_method`, `res_campo_resnet`/`res_niveis` ← `pets_regions/`,
+`disc_espaco` ← `discussion/scatter`, `gram_construcao` ← `methodology/gram_construcao`). As figuras compostas
+já saem em `../docs/figs/`: `res_comportamento` e `res_pares` (`results_figures.py`, a partir das suítes e dos
+estudos de caso), `res_ablacoes` (`ablations_figure.py`) e `res_semantica` (`semantics_figure.py`).
 
 ## Dados
 

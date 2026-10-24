@@ -265,7 +265,8 @@ def plot(args, res_n, res_d, res_f, slopes, path: str) -> None:
     T.use()
     import matplotlib.pyplot as plt  # noqa: F401
     extra = sns.color_palette("colorblind", 10)
-    fig, axes = T.grid(1, 3, width="full", height=3.6, gridspec_kw={"width_ratios": [1.0, 0.75, 1.25]})
+    # dois paineis: a varredura em D (Gram linear em D) fica so no JSON e no texto, que da o expoente
+    fig, axes = T.grid(1, 2, width="full", height=3.5, gridspec_kw={"width_ratios": [1.0, 1.2]})
 
     ax = axes[0, 0]
     ns = np.asarray(args.ns, float)
@@ -283,14 +284,6 @@ def plot(args, res_n, res_d, res_f, slopes, path: str) -> None:
     T.despine(ax)
 
     ax = axes[0, 1]
-    ax.plot(args.dims, res_d, ms=3, lw=1.2, **T.series("params"))
-    ax.set_xscale("log"); ax.set_yscale("log")
-    ax.text(0.04, 0.95, f"Gram bruta\ninclinação {_comma(slopes['D']['gram'])}", transform=ax.transAxes,
-            ha="left", va="top", fontsize=6.0, color=T.INK_SOFT)
-    ax.set_xlabel(f"dimensão da fonte $D$ ($n = {args.n_for_d}$)"); ax.set_ylabel("tempo (s)")
-    T.despine(ax)
-
-    ax = axes[0, 2]
     fs_all = args.fs
     for k, lab, key, marker in F_SERIES:
         if not res_f.get(k):

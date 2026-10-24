@@ -56,8 +56,13 @@ def build_dice(model, X_tr: np.ndarray, y_tr: np.ndarray, device, seed: int):
     return dice_ml.Dice(data, m, method="random"), cols
 
 
-def dice_scores(dice, xi: np.ndarray, cj: int, total: int, rng) -> np.ndarray:
-    """Fracao dos contrafactuais do DiCE que alteram cada atributo (zeros se nenhum foi achado)."""
+def dice_scores(dice, xi: np.ndarray, cj: int, total: int, rng, xj: np.ndarray | None = None) -> np.ndarray:
+    """Fracao dos contrafactuais do DiCE que alteram cada atributo (zeros se nenhum foi achado).
+
+    Com `xj`, os atributos em que x_i e x_j ja coincidem vao para o fim do ranking (pontuacao -1): o
+    DiCE pode altera-los, mas leva-los ao valor de j nao muda nada no teste de trocas, e as demais
+    tecnicas contrastivas e a ordem aleatoria tambem so ordenam os atributos que diferem.
+    """
     import pandas as pd
 
     explainer, cols = dice
@@ -70,4 +75,7 @@ def dice_scores(dice, xi: np.ndarray, cj: int, total: int, rng) -> np.ndarray:
     freq = np.zeros(len(xi))
     if found is not None and len(found):
         freq = (np.abs(found[cols].to_numpy(dtype=float) - np.asarray(xi)[None]) > 1e-6).mean(0)
-    return freq + 1e-9 * rng.random(len(xi))
+    score = freq + 1e-9 * rng.random(len(xi))
+    if xj is not None:
+        score = np.where(np.abs(np.asarray(xj) - np.asarray(xi)) > 1e-9, score, -1.0)
+    return score

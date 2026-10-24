@@ -52,55 +52,12 @@ Por fim, o método se diferencia das técnicas de análise representacional que 
 
 \section{Núcleo Reprodutor em Espaços de Hilbert}\label{sec:rkhs}
 
-O método proposto neste trabalho é construído sobre a teoria de \textit{kernels} formalizada por \cite{Aronszajn1950}, que faz parte da teoria clássica de aprendizagem de máquina. Os Espaços de Hilbert com Núcleo Reprodutor (\textit{Reproducing Kernel Hilbert Spaces} ou RKHS) fornecem a base funcional que conecta a noção de similaridade entre dados, expressa por \textit{kernels}, à geometria dos espaços de representação internos dos modelos. Ao garantir que a avaliação pontual de funções seja uma operação contínua, os RKHS permitem que propriedades geométricas do espaço de funções sejam exploradas de forma estável, o que é essencial para a construção de métodos de interpretabilidade que operem diretamente sobre as representações aprendidas. As definições apresentadas a seguir seguem \cite{Aronszajn1950} e \cite{Scholkopf2001}.
-
-\textbf{Espaço de Hilbert:} Um espaço de Hilbert $\mathcal{H}$ é um espaço vetorial munido de um produto interno $\langle \cdot, \cdot \rangle_{\mathcal{H}}: \mathcal{H} \times \mathcal{H} \to \mathbb{R}$ que é completo em relação à norma induzida $\|f\|_{\mathcal{H}} = \sqrt{\langle f, f \rangle_{\mathcal{H}}}$. A completude significa que toda sequência de Cauchy, isto é, toda sequência cujos termos ficam arbitrariamente próximos entre si, converge para um elemento do próprio espaço, de modo que $\mathcal{H}$ não possui ``lacunas''.
-
-\textbf{Núcleo Reprodutor:} Um núcleo reprodutor (\textit{kernel}) é uma função $k: \mathcal{X} \times \mathcal{X} \to \mathbb{R}$ simétrica, isto é, $k(x, x') = k(x', x)$ para todo $x, x' \in \mathcal{X}$, e positivamente definida, o que significa que, para qualquer conjunto finito de pontos $\{x_1, x_2, \dots, x_n\} \subset \mathcal{X}$ e quaisquer escalares $c_1, c_2, \dots, c_n \in \mathbb{R}$,
-
-\begin{equation}\label{eq:pos_def}
-    \sum_{i=1}^{n} \sum_{j=1}^{n} c_i \, c_j \, k(x_i, x_j) \geq 0.
-\end{equation}
-
-A exigência de definição positiva decorre diretamente da interpretação do \textit{kernel} como um produto interno em algum espaço de características. Considere um mapeamento $\phi: \mathcal{X} \to V$ tal que $k(x_i, x_j) = \langle \phi(x_i), \phi(x_j) \rangle_V$. A norma ao quadrado de um vetor $v = \sum_i c_i \, \phi(x_i) \in V$ é dada por
-
-\begin{equation}\label{eq:kernel_norm}
-    \|v\|^2 = \left\langle \sum_i c_i \, \phi(x_i),\; \sum_j c_j \, \phi(x_j) \right\rangle_V = \sum_{i=1}^{n} \sum_{j=1}^{n} c_i \, c_j \, k(x_i, x_j),
-\end{equation}
-
-\noindent de modo que a condição \eqref{eq:pos_def} equivale à não-negatividade da norma, propriedade necessária de qualquer produto interno. Na prática, calcular $\phi$ explicitamente pode ser inviável ou computacionalmente custoso. O \textit{kernel} contorna esse problema ao computar o produto interno no espaço transformado diretamente a partir dos pontos originais, sem jamais construir $\phi$ de forma explícita. Esse procedimento é conhecido como \textit{kernel trick} \citep{Scholkopf2001} e está ilustrado na Figura \ref{fig:kernel_trick}.
-
-\begin{figure}[pos=!htbp]
-  \centering
-  \includegraphics[width=\textwidth]{Kernel.png}
-  \caption{O mapa de características $\phi$ leva os dados do espaço de entrada $\mathcal{X}$ para um espaço de dimensão maior $\mathbb{R}^d$\, onde as classes se tornam linearmente separáveis. Na prática, calcular $\phi$ explicitamente pode ser inviável ou computacionalmente custoso. O \textit{kernel} $k(x_i, x_j) = \langle \phi(x_i), \phi(x_j) \rangle$ contorna esse problema: ele computa o produto interno no espaço transformado diretamente a partir dos pontos originais, sem nunca construir $\phi$ (esse é o chamado ``\textit{kernel trick}'')}
-  \label{fig:kernel_trick}
-\end{figure}
-
-\textbf{Matriz de Gram:}\label{def:gram} Dados $n$ pontos $\{x_1, x_2, \dots, x_n\} \subset \mathcal{X}$ e um \textit{kernel} $k$, a matriz de Gram é a matriz $K \in \mathbb{R}^{n \times n}$ cujas entradas são $K_{ij} = k(x_i, x_j)$. Pelo \textit{kernel trick}, cada entrada corresponde ao produto interno $\langle \phi(x_i), \phi(x_j) \rangle_V$ no espaço de características, de modo que $K$ codifica todas as relações de similaridade entre os pontos sem que $\phi(\cdot)$ precise ser obtido. A condição de definição positiva do \textit{kernel} garante que $K$ é semidefinida positiva, isto é, $c^\top K c \geq 0$ para todo $c \in \mathbb{R}^n$, que é a mesma condição imposta pelo produto interno expressa em formato matricial.
-
-\textbf{Kernel Produto:} Dado um conjunto $\{k_1, k_2, \dots, k_{d}\}$ de \textit{kernels} positivamente definidos, com cada $k_i: \mathcal{X}_i \times \mathcal{X}_i \to \mathbb{R}$, o \textit{kernel} produto definido sobre $\mathcal{X} = \mathcal{X}_1 \times \mathcal{X}_2 \times \cdots \times \mathcal{X}_{d}$ é dado por
-
-\begin{equation}\label{eq:kernel_prod}
-    k(x, x') = \prod_{i=1}^{d} k_i(x_i, x_i'),
-\end{equation}
-
-\noindent onde $x = (x_1, \dots, x_{d})$ e $x' = (x_1', \dots, x_{d}')$ (aqui $d$ é o número de fontes, e não o número de objetos $n$). Veja que, em termos matriciais, a matriz de Gram de $k$ é o produto de Hadamard $K_1 \circ K_2 \circ \cdots \circ K_{d}$ das matrizes de Gram dos fatores. Como o produto de Hadamard de matrizes semidefinidas positivas é semidefinido positivo, pelo teorema de Schur \citep{Schur1911, HornJohnson2013}, o \textit{kernel} produto também é positivamente definido.
-
-\textbf{RKHS:} Um Espaço de Hilbert com Núcleo Reprodutor é um espaço de Hilbert $\mathcal{H}$ de funções $f: \mathcal{X} \to \mathbb{R}$ no qual existe um \textit{kernel} $k: \mathcal{X} \times \mathcal{X} \to \mathbb{R}$ tal que duas propriedades são satisfeitas: (1) para todo $x \in \mathcal{X}$, a função $k(\cdot, x)$ pertence a $\mathcal{H}$, (2) para toda $f \in \mathcal{H}$ e todo $x \in \mathcal{X}$,
-
+O método é construído sobre a teoria clássica de \textit{kernels} \citep{Aronszajn1950, Scholkopf2001}, da qual esta seção retoma apenas os resultados e a notação utilizados adiante. Um \textit{kernel} é uma função $k: \mathcal{X} \times \mathcal{X} \to \mathbb{R}$ simétrica e positivamente definida, isto é, tal que $\sum_{i,j} c_i c_j\, k(x_i, x_j) \geq 0$ para quaisquer pontos $x_1, \dots, x_n \in \mathcal{X}$ e escalares $c_1, \dots, c_n \in \mathbb{R}$. Essa condição equivale a $k$ ser um produto interno $k(x, x') = \langle \phi(x), \phi(x') \rangle$ em algum espaço de características, que não precisa ser construído explicitamente (o \textit{kernel trick}). \label{def:gram}Dados $n$ pontos, a \emph{matriz de Gram} $K \in \mathbb{R}^{n \times n}$, com $K_{ij} = k(x_i, x_j)$, reúne todas as similaridades entre eles e é semidefinida positiva. Pelo teorema de \cite{Aronszajn1950}, todo \textit{kernel} positivamente definido determina um único espaço de Hilbert de funções $\mathcal{H}_k$ (RKHS) no qual $k(\cdot, x) \in \mathcal{H}_k$ para todo $x$ e vale a propriedade reprodutora
 \begin{equation}\label{eq:reproducing}
-    f(x) = \langle f, \, k(\cdot, x) \rangle_{\mathcal{H}}.
+    f(x) = \langle f, \, k(\cdot, x) \rangle_{\mathcal{H}_k}, \qquad \text{em particular,} \qquad k(x, x') = \langle k(\cdot, x), \, k(\cdot, x') \rangle_{\mathcal{H}_k},
 \end{equation}
-
-A Equação \eqref{eq:reproducing} é denominada propriedade reprodutora e dá nome ao espaço. Ela estabelece que avaliar uma função $f$ em um ponto $x$ equivale a tomar o produto interno de $f$ com a função \textit{kernel} ancorada em $x$, $k(\cdot, x)$. Uma consequência imediata é que o próprio \textit{kernel} pode ser recuperado pelo produto interno de duas dessas fatias:
-
-\begin{equation}\label{eq:kernel_inner}
-    k(x, x') = \langle k(\cdot, x), \, k(\cdot, x') \rangle_{\mathcal{H}}.
+e, reciprocamente, todo RKHS tem um único núcleo reprodutor. Por fim, dados \textit{kernels} positivamente definidos $k_l: \mathcal{X}_l \times \mathcal{X}_l \to \mathbb{R}$, $l = 1, \dots, d$, o \textit{kernel} produto sobre $\mathcal{X}_1 \times \cdots \times \mathcal{X}_d$,
+\begin{equation}\label{eq:kernel_prod}
+    k(x, x') = \prod_{l=1}^{d} k_l(x_l, x_l'),
 \end{equation}
-
-A propriedade reprodutora implica, ainda, que o funcional de avaliação pontual $\delta_x: f \mapsto f(x)$ é um funcional linear contínuo em $\mathcal{H}$. Essa continuidade não é garantida em espaços de Hilbert arbitrários de funções e é precisamente o que distingue um RKHS de um espaço de Hilbert genérico \citep{Aronszajn1950}. A continuidade da avaliação pontual assegura que funções próximas na norma de $\mathcal{H}$ produzem valores próximos em cada ponto do domínio, conferindo estabilidade às representações no espaço e tornando o RKHS particularmente adequado para problemas de aprendizado em que se deseja controlar a complexidade das funções aprendidas e explorar a geometria do espaço de representação.
-
-\textbf{Teorema de \cite{Aronszajn1950}:} Se $k: \mathcal{X} \times \mathcal{X} \to \mathbb{R}$ é simétrico e positivamente definido, então existe um único RKHS $\mathcal{H}_k$ cujo núcleo reprodutor é $k$. Reciprocamente, todo RKHS possui um único núcleo reprodutor.
-
-\noindent A demonstração é construtiva: o espaço é gerado pelas combinações lineares finitas das funções $k(\cdot, x)$, com o produto interno definido pelo próprio \textit{kernel}, e completado pelos limites de suas sequências de Cauchy. Essa correspondência tem uma consequência direta para este trabalho, visto que, dado um conjunto de \textit{kernels} positivamente definidos $\{k_1, \dots, k_d\}$, cada um determina automaticamente seu próprio RKHS $\mathcal{H}_{k_1}, \dots, \mathcal{H}_{k_d}$.
+tem como matriz de Gram o produto de Hadamard $K_1 \circ \cdots \circ K_d$ das Gram dos fatores e é positivamente definido pelo teorema do produto de Schur \citep{Schur1911, HornJohnson2013}. Aqui, $d$ é o número de fontes, e não o número de objetos $n$.

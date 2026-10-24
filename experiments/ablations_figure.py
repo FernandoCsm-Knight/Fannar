@@ -4,9 +4,10 @@
       soma (= concatenacao), o produto sem T_a, sem J, sem os dois, a fonte A isolada e o piso
       cruzado do produto;
   (b) o mesmo no Oxford-IIIT Pet (ResNet; o transformador se a ResNet nao tiver sido rodada);
-  (c) previsao do acerto: a margem geometrica contra os sinais de confianca do item (b);
-  (d) verdade de base sintetica: fracao dos k primeiros atributos de cada ranking que sao de
+  (c) verdade de base sintetica: fracao dos k primeiros atributos de cada ranking que sao de
       fato informativos, com o acaso tracejado.
+
+A comparacao com os sinais de confianca (`confidence_panel`) fica so na tabela do artigo.
 
 Um painel cujos dados ainda nao existem fica vazio, com o aviso, e os demais sao desenhados.
 
@@ -69,6 +70,8 @@ def composition_panel(ax, summary: dict | None, name: str) -> None:
     ax.set_xticks(x)
     ax.set_xticklabels(blocks)
     ax.set_ylabel("AUC da margem para o acerto")
+    ax.set_title({"tabular": "bases tabulares", "pets_resnet": "Pet, ResNet", "pets_vit": "Pet, ViT",
+                  "cifar100_resnet": "CIFAR-100, ResNet"}.get(name, name), fontsize=7.5)
     T.despine(ax)
     T.decimal(ax, "y", 2)
 
@@ -121,7 +124,9 @@ def synthetic_panel(ax, runs: list[dict]) -> None:
     ax.set_yticks(y)
     ax.set_yticklabels([SYNTH_LABEL[k] for k in keys], fontsize=6.5)
     ax.set_xlim(0, 1)
+    ax.set_xticks(np.arange(0.0, 1.01, 0.2))  # sem isso o eixo marca 0,25 e 0,75, que uma casa arredonda
     ax.set_xlabel(f"fração dos {runs[0]['n_informative']} primeiros que são informativos")
+    ax.set_title("dados sintéticos (P6)", fontsize=7.5)
     T.despine(ax)
     T.decimal(ax, "x", 1)
 
@@ -139,12 +144,14 @@ def main() -> None:
     synth = [json.loads(f.read_text(encoding="utf-8"))
              for f in sorted(Path(args.synthetic, "runs").glob("*.json"))]
 
-    fig, axes = T.grid(2, 2, width="full", height=6.2)
+    # tres paineis numa linha: a comparacao com os sinais de confianca (`confidence_panel`) fica so na
+    # tabela do artigo, que ja traz os mesmos valores
+    fig, axes = T.grid(1, 3, width="full", height=2.9, gridspec_kw={"width_ratios": [1.0, 1.0, 1.15]})
     composition_panel(axes[0, 0], summaries["tabular"], "tabular")
     image = "pets_resnet" if summaries["pets_resnet"] is not None else "pets_vit"
     composition_panel(axes[0, 1], summaries[image], image)
-    confidence_panel(axes[1, 0], summaries)
-    synthetic_panel(axes[1, 1], synth)
+    synthetic_panel(axes[0, 2], synth)
+    axes[0, 1].set_ylabel("")
     handles, labels = axes[0, 0].get_legend_handles_labels()
     if not handles:
         handles, labels = axes[0, 1].get_legend_handles_labels()

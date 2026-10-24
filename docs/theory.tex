@@ -1,6 +1,6 @@
 \section{Tensor de Similaridade em Espaços de Hilbert com Núcleo Reprodutor}\label{sec:tensor_rkhs}
 
-A Seção \ref{sec:rkhs} estabeleceu os fundamentos dos RKHS, demonstrando que todo \textit{kernel} simétrico e positivamente definido determina um único RKHS, e que o produto de \textit{kernels} positivamente definidos é também positivamente definido. Esta seção desenvolve, sobre esses fundamentos, a base matemática do método proposto, isto é, o tensor de similaridade construído via produto tensorial de RKHS, e os seus resultados, junto com os das Seções \ref{sec:kernel_pipeline} e \ref{sec:representation_geometry}, formalizam o arcabouço do método. Ressalta-se que os resultados desta seção são, em sua maior parte, adaptações de resultados clássicos da teoria de RKHS \citep{Aronszajn1950, BerlinetThomas2004, PaulsenRaghupathi2016}. O que se propõe aqui é a sua leitura como \emph{tensor de similaridade} sobre fontes heterogêneas de um mesmo modelo, e não um teorema novo sobre RKHS. A contribuição do trabalho é a combinação desse arcabouço com o protocolo empírico que avalia o que a geometria resultante de fato diz sobre o comportamento do modelo. A construção é apresentada em quatro etapas: o produto tensorial de espaços de Hilbert, o tensor de similaridade como núcleo reprodutor do produto tensorial, a estrutura métrica via curvas de nível, e o complemento ortogonal de RKHS. Cada etapa é fundamentada por demonstrações dos resultados centrais, sem referência a aplicações específicas. Observe que nenhum desses resultados depende de quais são as $d$ fontes ou de quais \textit{kernels} são utilizados, sendo exigido apenas que cada $k_l$ seja positivamente definido. Essa generalidade garante apenas que o objeto está bem definido (que a Gram é semidefinida positiva, que há uma pseudométrica e uma decomposição ortogonal de energia). Ela não garante que a geometria resultante seja informativa sobre o modelo, o que só pode ser verificado empiricamente (Seções \ref{sec:metodologia} e \ref{sec:resultados}). A forma como essa teoria é aplicada sobre uma amostra finita é apresentada na Seção \ref{sec:kernel_pipeline}, enquanto a instanciação utilizada nos experimentos é apresentada na Seção \ref{sec:metodologia}.
+A Seção \ref{sec:rkhs} retomou os fundamentos dos RKHS: todo \textit{kernel} simétrico e positivamente definido determina um único RKHS, e o produto de \textit{kernels} positivamente definidos é também positivamente definido. Esta seção desenvolve, sobre esses fundamentos, a base matemática do método proposto, isto é, o tensor de similaridade construído via produto tensorial de RKHS, e os seus resultados, junto com os das Seções \ref{sec:kernel_pipeline} e \ref{sec:representation_geometry}, formalizam o arcabouço do método. Ressalta-se que os resultados desta seção são, em sua maior parte, adaptações de resultados clássicos da teoria de RKHS \citep{Aronszajn1950, BerlinetThomas2004, PaulsenRaghupathi2016}. O que se propõe aqui é a sua leitura como \emph{tensor de similaridade} sobre fontes heterogêneas de um mesmo modelo, e não um teorema novo sobre RKHS. A contribuição do trabalho é a combinação desse arcabouço com o protocolo empírico que avalia o que a geometria resultante de fato diz sobre o comportamento do modelo. A construção é apresentada em quatro etapas: o produto tensorial de espaços de Hilbert, o tensor de similaridade como núcleo reprodutor do produto tensorial, a estrutura métrica via curvas de nível, e o complemento ortogonal de RKHS. Cada etapa é fundamentada por demonstrações dos resultados centrais, sem referência a aplicações específicas. Observe que nenhum desses resultados depende de quais são as $d$ fontes ou de quais \textit{kernels} são utilizados, sendo exigido apenas que cada $k_l$ seja positivamente definido. Essa generalidade garante apenas que o objeto está bem definido (que a Gram é semidefinida positiva, que há uma pseudométrica e uma decomposição ortogonal de energia). Ela não garante que a geometria resultante seja informativa sobre o modelo, o que só pode ser verificado empiricamente (Seções \ref{sec:metodologia} e \ref{sec:resultados}). A forma como essa teoria é aplicada sobre uma amostra finita é apresentada na Seção \ref{sec:kernel_pipeline}, enquanto a instanciação utilizada nos experimentos é apresentada na Seção \ref{sec:metodologia}.
 
 \subsection{Produto Tensorial de Espaços de Hilbert}
 
@@ -83,27 +83,13 @@ cujo produto interno é dado pelo \textit{kernel} produto sobre $\mathcal{Z}$,
 
 \end{definition}
  
-\textbf{O tensor é implícito, a Gram o representa.} O tensor de similaridade $\Phi(z)$ é um objeto implícito, em geral de dimensão elevada ($\prod_l D_l$), que não precisa ser exibido explicitamente para que a estrutura de $\mathcal{H}_K$ seja acessível. Toda a informação relevante sobre um conjunto finito $\{z_1, \dots, z_n\}$, com $z_i = (x_{i1}, \dots, x_{id})$, reside nos produtos internos $\langle \Phi(z_i), \Phi(z_j)\rangle$, reunidos na \emph{matriz de Gram} $\mathbf{G}$. Por \eqref{eq:tensor_sim_inner}, essa matriz é o produto de Hadamard das Gram componentes:
-\begin{equation}\label{eq:tensor_sim_gram}
-    G_{ij} = \prod_{l=1}^{d} k_l(x_{il}, x_{jl}), \hspace{0.2cm} \text{isto é,} \hspace{0.2cm} \mathbf{G} = \mathbf{K}_1 \circ \mathbf{K}_2 \circ \cdots \circ \mathbf{K}_d, \quad (\mathbf{K}_l)_{ij} = k_l(x_{il}, x_{jl}).
-\end{equation}
-A matriz $\mathbf{G}$ é, assim, a realização finita do tensor de similaridade sobre a amostra: os objetos que caracterizam $\mathcal{H}_K$ se exprimem por meio dela, e não pelos tensores. A Figura \ref{fig:gram_hadamard} ilustra essa composição para $d = 3$ componentes.
+\textbf{O tensor é implícito, a Gram o representa.} O tensor de similaridade $\Phi(z)$ é um objeto implícito, em geral de dimensão elevada ($\prod_l D_l$), que não precisa ser exibido explicitamente para que a estrutura de $\mathcal{H}_K$ seja acessível. Toda a informação relevante sobre um conjunto finito $\{z_1, \dots, z_n\}$, com $z_i = (x_{i1}, \dots, x_{id})$, reside nos produtos internos $\langle \Phi(z_i), \Phi(z_j)\rangle$, reunidos na \emph{matriz de Gram} $\mathbf{G}$, que, pelo Corolário \ref{cor:hadamard_form} adiante, é o produto de Hadamard das Gram componentes. A matriz $\mathbf{G}$ é, assim, a realização finita do tensor de similaridade sobre a amostra: os objetos que caracterizam $\mathcal{H}_K$ se exprimem por meio dela, e não pelos tensores.
 
-\begin{figure}[pos=htbp]
-    \centering
-    \includegraphics[width=\textwidth]{gram_hadamard_draft.png}
-    \caption{Ilustração da matriz de Gram do tensor de similaridade como produto de Hadamard das matrizes de Gram componentes, $G_{ij} = \prod_l k_l(x_{il}, x_{jl})$. Veja que a matriz $\mathbf{G}$ só apresenta valores altos nas regiões em que as três componentes $\mathbf{K}_1$, $\mathbf{K}_2$ e $\mathbf{K}_3$ são simultaneamente altas, o que reflete o critério de similaridade conjunta do Comentário \ref{rem:joint_similarity}.}
-    \label{fig:gram_hadamard}
-\end{figure}
- 
 A escolha de trabalhar sobre o domínio produto $\mathcal{Z}$, e não sobre um domínio único com os fatores avaliados no mesmo ponto, é o que garante a forma limpa do teorema a seguir: como cada componente $x_l$ varia independentemente em $\mathcal{X}_l$, o tensor de similaridade percorre \emph{todos} os tensores elementares, e não apenas os diagonais.
 
  
 \begin{theorem}[Realização do tensor de similaridade em RKHS]\label{thm:tensor_similarity}
-Sejam $\mathcal{H}_{k_1}, \dots, \mathcal{H}_{k_d}$ RKHS com núcleos $k_1, \dots, k_d$ sobre domínios $\mathcal{X}_1, \dots, \mathcal{X}_d$, e seja $K$ o \textit{kernel} produto sobre $\mathcal{Z} = \prod_l \mathcal{X}_l$ definido por
-\begin{equation}\label{eq:K_thm}
-    K(z, z') = \prod_{l=1}^{d} k_l(x_l, x_l'), \qquad z = (x_1,\dots,x_d), \; z' = (x_1',\dots,x_d').
-\end{equation}
+Sejam $\mathcal{H}_{k_1}, \dots, \mathcal{H}_{k_d}$ RKHS com núcleos $k_1, \dots, k_d$ sobre domínios $\mathcal{X}_1, \dots, \mathcal{X}_d$, e seja $K$ o \textit{kernel} produto sobre $\mathcal{Z} = \prod_l \mathcal{X}_l$ da Equação \eqref{eq:tensor_sim_inner}.
 Então $K$ é positivamente definido, e seu RKHS $\mathcal{H}_K$ é canonicamente isométrico ao produto tensorial \emph{completo},
 \begin{equation}\label{eq:full_iso}
     \mathcal{H}_K \;\cong\; \bigotimes_{l=1}^{d} \mathcal{H}_{k_l},
@@ -140,7 +126,11 @@ A hipótese decisiva do Teorema \ref{thm:tensor_similarity} é a variação inde
 \end{remark}
  
 \begin{corollary}[Forma matricial]\label{cor:hadamard_form}
-Sejam $\{z_1, \dots, z_n\} \subset \mathcal{Z}$ um conjunto finito e $\mathbf{K}_l$ a matriz de Gram de $k_l$ nas $l$-ésimas componentes. A matriz de Gram do \textit{kernel} produto é o produto de Hadamard $\mathbf{G} = \mathbf{K}_1 \circ \cdots \circ \mathbf{K}_d$, simétrica e semidefinida positiva.
+Sejam $\{z_1, \dots, z_n\} \subset \mathcal{Z}$, com $z_i = (x_{i1}, \dots, x_{id})$, e $\mathbf{K}_l$ a matriz de Gram de $k_l$ nas $l$-ésimas componentes, $(\mathbf{K}_l)_{ij} = k_l(x_{il}, x_{jl})$. A matriz de Gram do \textit{kernel} produto é o produto de Hadamard
+\begin{equation}\label{eq:tensor_sim_gram}
+    \mathbf{G} = \mathbf{K}_1 \circ \mathbf{K}_2 \circ \cdots \circ \mathbf{K}_d,
+\end{equation}
+simétrica e semidefinida positiva.
 \end{corollary}
  
 \begin{proof}
@@ -149,7 +139,7 @@ A entrada $(i,j)$ de $\mathbf{K}_1 \circ \cdots \circ \mathbf{K}_d$ é $\prod_l 
  
 
 \begin{remark}[Critério de similaridade conjunta]\label{rem:joint_similarity}
-A forma multiplicativa de \eqref{eq:K_thm} impõe um critério de similaridade \emph{conjunta}: assumindo $k_l \geq 0$ (como em \textit{kernels} normalizados), para que $K(z, z')$ seja grande é necessário que todo $k_l(x_l, x_l')$ seja grande. Um único fator próximo de zero suprime o produto, como pode ser observado na Figura \ref{fig:gram_hadamard}. Isso difere qualitativamente de uma combinação aditiva $\sum_l \alpha_l k_l$, em que um fator dominante poderia mascarar a discordância dos demais. Quando os $k_l$ podem ser negativos, a interpretação exige cuidado, pois cancelamentos de sinal podem produzir $K(z,z')$ pequeno mesmo com fatores individuais não pequenos em módulo. Esse critério é uma propriedade da forma do \textit{kernel}, e não evidência de que o produto seja preferível à soma para fins de interpretação. Para \textit{kernels} gaussianos, por exemplo, o produto equivale ao \textit{kernel} gaussiano sobre a concatenação das fontes, de modo que a vantagem da composição multiplicativa sobre alternativas (soma ponderada, concatenação, fonte isolada) é uma questão empírica, tratada na Subseção \ref{subsec:res_composicao}.
+A forma multiplicativa de \eqref{eq:tensor_sim_inner} impõe um critério de similaridade \emph{conjunta}: assumindo $k_l \geq 0$ (como em \textit{kernels} normalizados), para que $K(z, z')$ seja grande é necessário que todo $k_l(x_l, x_l')$ seja grande. Um único fator próximo de zero suprime o produto. Isso difere qualitativamente de uma combinação aditiva $\sum_l \alpha_l k_l$, em que um fator dominante poderia mascarar a discordância dos demais. Quando os $k_l$ podem ser negativos, a interpretação exige cuidado, pois cancelamentos de sinal podem produzir $K(z,z')$ pequeno mesmo com fatores individuais não pequenos em módulo. Esse critério é uma propriedade da forma do \textit{kernel}, e não evidência de que o produto seja preferível à soma para fins de interpretação. Para \textit{kernels} gaussianos, por exemplo, o produto equivale ao \textit{kernel} gaussiano sobre a concatenação das fontes, de modo que a vantagem da composição multiplicativa sobre alternativas (soma ponderada, concatenação, fonte isolada) é uma questão empírica, tratada na Subseção \ref{subsec:res_composicao}.
 \end{remark}
 
 \begin{corollary}[Composição recursiva]\label{cor:recursive_composition}
@@ -220,13 +210,11 @@ em que $\{\psi_k\}$ é um sistema ortonormal de autofunções de $L_K$ em $L^2(\
 \end{equation*}
 forma uma base ortonormal de $\mathcal{H}_K$. Cada termo da expansão corresponde a um modo espectral independente, e o autovalor $\lambda_k$ quantifica a contribuição global desse modo para a estrutura do operador integral associado ao núcleo.
 
-Empiricamente, quando se dispõe apenas da matriz de Gram
-\begin{equation*}
-    \mathbf{G}
-    =
-    V\Lambda V^\top,
-\end{equation*}
-os autovalores e autovetores de $\mathbf{G}$ fornecem uma aproximação finita da decomposição de Mercer. As colunas de $V$ representam as direções espectrais observadas na amostra, enquanto os elementos diagonais de $\Lambda$ quantificam a contribuição de cada uma dessas direções. Sob a hipótese de que as observações são amostradas de forma independente segundo $\mu$, e com $K$ contínuo e limitado, os autovalores de $\mathbf{G}/n$ convergem para os de $L_K$ \citep{KoltchinskiiGine2000, Rosasco2010}. Duas ressalvas se aplicam: (a) a matriz efetivamente decomposta nos experimentos é a Gram após o \textit{pipeline} $T$ (centramento, normalização), de modo que o objeto analisado é o \textit{kernel} transformado e não o produto original; e (b) a hipótese de amostragem independente é uma idealização, pois as amostras vêm de um conjunto de avaliação fixo. As quantidades espectrais devem, portanto, ser lidas como propriedades da amostra analisada, e a ligação com o operador $L_K$ é de natureza assintótica.
+Empiricamente, quando se dispõe apenas da matriz de Gram, a sua decomposição espectral
+\begin{equation}\label{eq:empirical_eigendecomposition}
+    \mathbf{G} = V\Lambda V^\top, \qquad \Lambda = \mathrm{diag}\bigl(\widehat{\lambda}_1, \dots, \widehat{\lambda}_n\bigr),
+\end{equation}
+fornece uma aproximação finita da decomposição de Mercer. As colunas de $V$ representam as direções espectrais observadas na amostra, enquanto os elementos diagonais de $\Lambda$ quantificam a contribuição de cada uma dessas direções. Sob a hipótese de que as observações são amostradas de forma independente segundo $\mu$, e com $K$ contínuo e limitado, os autovalores de $\mathbf{G}/n$ convergem para os de $L_K$ \citep{KoltchinskiiGine2000, Rosasco2010}. Duas ressalvas se aplicam: (a) a matriz efetivamente decomposta nos experimentos é a Gram após o \textit{pipeline} $T$ (centramento, normalização), de modo que o objeto analisado é o \textit{kernel} transformado e não o produto original; e (b) a hipótese de amostragem independente é uma idealização, pois as amostras vêm de um conjunto de avaliação fixo. As quantidades espectrais devem, portanto, ser lidas como propriedades da amostra analisada, e a ligação com o operador $L_K$ é de natureza assintótica.
  
 \textbf{Subespaço espectral retido.} Retêm-se os $r$ modos de maior autovalor:
 \begin{equation}\label{eq:V_r}
@@ -402,24 +390,7 @@ Pela identidade de Pitágoras,
 \end{equation}
 Vale $E_{\mathrm{ratio}}(z)=0$ quando a representação da amostra pertence integralmente ao subespaço retido $V_r$, e $E_{\mathrm{ratio}}(z)=1$ quando ela pertence integralmente ao complemento ortogonal $V_r^\perp$. Valores intermediários indicam que a energia da representação está distribuída entre os modos retidos e os modos excluídos pelo truncamento.
  
-\textbf{Formulação empírica.} No regime finito, considere a decomposição espectral da matriz de Gram
-\begin{equation}\label{eq:empirical_eigendecomposition}
-    \mathbf{G}
-    =
-    V\Lambda V^\top,
-\end{equation}
-em que
-\begin{equation*}
-    \Lambda
-    =
-    \mathrm{diag}
-    \left(
-        \widehat{\lambda}_1,
-        \dots,
-        \widehat{\lambda}_n
-    \right).
-\end{equation*}
-Para a amostra $z_i$, a entrada diagonal $G_{ii}$ satisfaz
+\textbf{Formulação empírica.} No regime finito, com a decomposição \eqref{eq:empirical_eigendecomposition}, para a amostra $z_i$, a entrada diagonal $G_{ii}$ satisfaz
 \begin{equation}\label{eq:empirical_total_energy}
     G_{ii}
     =

@@ -318,7 +318,7 @@ def main() -> None:
 
     diff_runs = load_runs(args.differences)
     if diff_runs:
-        L += ["## (h) Leitura de pares nas dez bases\n"]
+        L += ["## (h) Leitura de pares nas bases tabulares\n"]
         for b in args.friedman_blocks:
             if b in diff_runs[0]["blocks"]:
                 res = differences_friedman(diff_runs, b)

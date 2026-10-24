@@ -122,7 +122,7 @@ def _flat(a: np.ndarray) -> np.ndarray:
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--family", choices=("tabular", "pets", "cifar100"), default="tabular")
-    ap.add_argument("--datasets", nargs="+", default=None, help="so no tabular; padrao: as dez bases")
+    ap.add_argument("--datasets", nargs="+", default=None, help="so no tabular; padrao: as bases de `DATASETS`")
     ap.add_argument("--seeds", type=int, default=None, help="padrao: 5 no tabular, 3 no Pet")
     ap.add_argument("--arch", default="resnet", choices=("resnet", "vit"))
     ap.add_argument("--sample", type=int, default=None, help="padrao: 500; 1000 no CIFAR-100")

@@ -1,6 +1,11 @@
 """Bases tabulares multiclasse do OpenML para o teste de estabilidade do metodo.
 
-Criterios de escolha, medidos antes de fixar a lista:
+Regra de selecao: todas as bases multiclasse do OpenML-CC18 (estudo 99) com pelo menos 2 000
+amostras, menos as duplicatas (as outras cinco `mfeat-*` descrevem os mesmos 2 000 digitos da
+`mfeat-factors`; `splice` sao os mesmos dados da `dna`) e a `CIFAR_10`, base de imagens ja coberta
+pelas suites de imagem. Sao 18 do CC18, mais `gas-drift` e `covertype`, que vinham da primeira lista.
+
+Criterios da primeira lista, medidos antes de fixa-la:
 
   multiclasse    com duas classes a margem contrastiva se reduz a diferenca entre dois
                  logits e troca de sinal com a predicao em toda a rede, e varias leituras do
@@ -10,7 +15,8 @@ Criterios de escolha, medidos antes de fixar a lista:
   equilibrio     nenhuma classe com poucos exemplos (por isso `wine-quality`, com uma classe de
                  5 amostras, ficou de fora; `vehicle` e `cnae-9` sao pequenas demais).
 
-`covertype` tem 581 012 amostras e e subamostrada de forma estratificada para 30 000.
+As bases com mais de 30 000 amostras sao subamostradas de forma estratificada para 30 000.
+Atributos categoricos binarios viram 0/1, e os de mais niveis (`connect-4`) viram indicadores.
 """
 
 from __future__ import annotations
@@ -50,14 +56,24 @@ DATASETS = {
     "pendigits": 32,
     "optdigits": 28,
     "satimage": 182,
-    "segment": 36,
+    "segment": 40984,
     "har": 1478,
     "mfeat-factors": 12,
     "gas-drift": 1476,
     "dna": 40670,
     "covertype": 1596,
+    "isolet": 300,
+    "texture": 40499,
+    "first-order": 1475,
+    "gesture": 4538,
+    "wall-robot": 1497,
+    "connect-4": 40668,
+    "jungle-chess": 41027,
+    "mnist": 554,
+    "fashion-mnist": 40996,
+    "devnagari": 40923,
 }
-MAX_SAMPLES = {"covertype": 30000}
+MAX_SAMPLES = {name: 30000 for name in DATASETS}
 
 # Bases fora da suite de estabilidade, usadas so como exemplo de explicacao. O Titanic e
 # binario: a margem contrastiva vira a diferenca entre dois logits, e Γ passa a apontar na
@@ -92,6 +108,31 @@ def _titanic() -> tuple[np.ndarray, np.ndarray, list[str], list[str]]:
     return X, y, list(cols), ["não sobreviveu", "sobreviveu"]
 
 
+@functools.lru_cache(maxsize=2)  # as bases de imagem achatadas ocupam centenas de MB
+def _openml(name: str) -> tuple[np.ndarray, np.ndarray, list[str], list[str]]:
+    """(X, y, nomes dos atributos, nomes das classes), com os categoricos codificados."""
+    import pandas as pd
+    bunch = fetch_openml(data_id=ALL[name], as_frame=True, parser="auto")
+    cols, names = [], []
+    for c in bunch.data.columns:
+        col = bunch.data[c]
+        if str(col.dtype) in ("category", "object"):
+            levels = sorted(col.astype(str).unique())
+            if len(levels) <= 2:
+                cols.append((col.astype(str) == levels[-1]).astype(float).to_numpy())
+                names.append(str(c))
+            else:
+                for lv in levels:
+                    cols.append((col.astype(str) == lv).astype(float).to_numpy())
+                    names.append(f"{c}={lv}")
+        else:
+            cols.append(pd.to_numeric(col, errors="coerce").to_numpy(dtype=float))
+            names.append(str(c))
+    enc = LabelEncoder().fit(np.asarray(bunch.target).astype(str))
+    y = enc.transform(np.asarray(bunch.target).astype(str)).astype(np.int64)
+    return np.column_stack(cols), y, names, [str(c) for c in enc.classes_]
+
+
 def feature_names(name: str) -> list[str]:
     """Nomes dos atributos, na ordem das colunas de `load_tabular`."""
     warnings.filterwarnings("ignore")
@@ -99,7 +140,7 @@ def feature_names(name: str) -> list[str]:
         return _titanic()[2]
     if use_mirror():
         return data_mirror.load(name)[2]
-    return list(fetch_openml(data_id=ALL[name], as_frame=False, parser="auto").feature_names)
+    return _openml(name)[2]
 
 
 def class_names(name: str) -> list[str]:
@@ -109,8 +150,7 @@ def class_names(name: str) -> list[str]:
         return _titanic()[3]
     if use_mirror():
         return data_mirror.load(name)[3]
-    y = fetch_openml(data_id=ALL[name], as_frame=False, parser="auto").target
-    return [str(c) for c in LabelEncoder().fit(np.asarray(y)).classes_]
+    return _openml(name)[3]
 
 
 def load_tabular(name: str, seed: int = 0) -> tuple[np.ndarray, np.ndarray]:
@@ -122,8 +162,7 @@ def load_tabular(name: str, seed: int = 0) -> tuple[np.ndarray, np.ndarray]:
     if use_mirror():
         X, y, _, _ = data_mirror.load(name)
     else:
-        X, y = fetch_openml(data_id=ALL[name], as_frame=False, return_X_y=True, parser="auto")
-        y = LabelEncoder().fit_transform(np.asarray(y)).astype(np.int64)
+        X, y, _, _ = _openml(name)
     X = np.nan_to_num(np.asarray(X, dtype=np.float64))
     if name in MAX_SAMPLES and len(y) > MAX_SAMPLES[name]:
         keep, _ = train_test_split(np.arange(len(y)), train_size=MAX_SAMPLES[name],

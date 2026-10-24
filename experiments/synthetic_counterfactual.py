@@ -121,7 +121,7 @@ def run_one(seed: int, args, device) -> dict:
         if lime_explainer is not None:
             ranked["lime"] = lime_contrastive(lime_explainer, model, xi, xj, ci, cj, device, args.lime_samples)
         if dice is not None:
-            ranked["dice"] = dice_scores(dice, xi, cj, args.dice_cfs, rng)
+            ranked["dice"] = dice_scores(dice, xi, cj, args.dice_cfs, rng, xj=xj)
         for name, score in ranked.items():
             order = np.lexsort((rng.random(F), -np.asarray(score, dtype=float)))
             hits[name].append(float(np.isin(order[:k], informative).mean()))
