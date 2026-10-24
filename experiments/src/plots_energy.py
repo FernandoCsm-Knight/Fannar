@@ -29,7 +29,6 @@ import matplotlib.pyplot as plt  # noqa: E402,F401  (tema antes do pyplot)
 GRADCAM = {"color": T.PALETTE[5], "marker": "X", "label": "Grad-CAM", "markeredgewidth": 0.0}
 CROSS = T.control("controle cruzado (mapa da rede aleatória)", marker="s")
 RANDOM = {**T.control("ordem aleatória", marker="o"), "linestyle": (0, (1.0, 1.6))}
-METHODS = ("joint", "activations", "params", "grads")
 DISPLAY_GAMMA = 0.5  # expoente do PowerNorm dos mapas; os scripts sobrescrevem por --display-gamma
 
 

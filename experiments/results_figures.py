@@ -4,10 +4,10 @@
                      CIFAR-100): uma leitura por painel, uma linha por familia (Gram conjunta, com a
                      faixa de um desvio) e o piso cruzado de cada familia tracejado na mesma cor.
                      Substitui as tres figuras de sete paineis de cada suite.
-  res_pares          P6 nos dois estudos de caso: (a, b) curvas de trocas na `letter` e na
-                     `pendigits`, (c) atributo da arvore de decisao entre os tres primeiros de cada
-                     ranking, nas duas bases, e (d) area de trocas contra o numero de avaliacoes do
-                     modelo na `letter`. Substitui as figuras de cada estudo e a do orcamento.
+  res_pares          P6 nos dois estudos de caso, `letter` (decisao nitida) e HELOC (decisao fraca):
+                     (a, b) curvas de trocas no MLP, (c) atributo em que a arvore nos rotulos separa i
+                     de j entre os tres primeiros de cada ranking, (d) atributos alterados pela
+                     construcao do contrafactual, no MLP e na arvore, contra o minimo exato.
 
 Uso:
     python results_figures.py        # grava em ../docs/figs/
@@ -25,7 +25,7 @@ from src import theme as T
 
 T.use()
 
-from src.plots_case import STYLE, _key, _present  # noqa: E402
+from src.plots_case import STYLE  # noqa: E402
 
 FAMILIES = (  # (pasta, rotulo, serie do tema, marcador)
     ("tabular_suite", "bases tabulares (MLP)", "joint", "o"),
@@ -40,7 +40,17 @@ READINGS = (
     ("containment_k", r"contenção em $V_r$ ($r = Q-1$)"),
     ("e_ratio_auc_k", r"AUC de $\widehat{E}_{\mathrm{ratio}}$ para o erro"),
 )
-CASE_KINDS = ("method", "shap_baseline", "ig", "lime", "shap", "absdiff", "dice", "gradxdelta", "random", "floor")
+CASES = (("letter", "letter"), ("heloc", "HELOC"))
+CASE_KINDS = ("method", "shap_baseline", "ig", "shap", "lime", "absdiff", "dice", "gradxdelta", "random", "floor")
+CASE_LABEL = {"method": "método", "shap_baseline": "Shapley exato (j de referência)", "ig": "gradientes integrados",
+              "shap": "SHAP contrastivo", "lime": "LIME contrastivo", "absdiff": "|Δx|", "dice": "DiCE",
+              "gradxdelta": "grad × Δx", "random": "aleatória", "floor": "método, rede não treinada"}
+# (chave nos JSONs do MLP, chave nos da arvore, rotulo, cor)
+CF_PROCS = (("minimal", "minimal", "mínimo exato", T.INK_FAINT),
+            ("seq_geo", "seq_geo", "sequencial, geometria", T.COLOR["joint"]),
+            ("seq_out", "seq_out", "sequencial, saída do modelo", T.COLOR["params"]),
+            ("fixed_geo", "fixed_geo", "ranking fixo, geometria", T.COLOR["joint_root"]),
+            ("dice_best", None, "DiCE, o mais esparso", STYLE["dice"]["color"]))
 
 
 def _curve(summary: dict, key: str):
@@ -87,83 +97,122 @@ def behaviour(out: Path, root: Path) -> None:
     T.save(fig, out / "res_comportamento.pdf")
 
 
-def _tree_top3(runs: list[dict], block: str) -> dict:
-    """Fracao dos pares com o atributo da arvore nos rotulos entre os 3 primeiros, por semente."""
-    from letter_case_study import local_tree_metrics
-    m = local_tree_metrics(runs, "label_tree", block)["metrics"]
-    return {k: np.asarray(m[k]["top3"], dtype=float) for k in m}
+def _load_runs(folder: Path) -> list[dict]:
+    return [json.loads(f.read_text(encoding="utf-8")) for f in sorted((folder / "runs").glob("seed*.json"))]
+
+
+def _tree_top3(runs: list[dict], key: str, block: str) -> np.ndarray:
+    """Fracao, por semente, dos pares em que o atributo da arvore nos rotulos esta entre os 3 primeiros."""
+    order_key = f"{key}@{block}" if key in ("method", "floor") else key
+    out = []
+    for r in runs:
+        hits = []
+        for p in r["pairs"]:
+            t = p["trees"]["label_tree"]
+            if not t["reproduces"] or t["feature"] is None:
+                continue
+            order = np.asarray(p["orders"][order_key])
+            hits.append(int(np.flatnonzero(order == t["feature"])[0]) < 3)
+        out.append(np.mean(hits))
+    return np.asarray(out)
+
+
+def _chance_top3(runs: list[dict]) -> np.ndarray:
+    return np.asarray([np.mean([min(3, p["n_differ"]) / p["n_differ"] for p in r["pairs"]
+                                if p["trees"]["label_tree"]["reproduces"] and p["trees"]["label_tree"]["feature"] is not None])
+                       for r in runs])
+
+
+def _cf_changed(runs: list[dict], proc: str, tree: bool) -> np.ndarray:
+    """Atributos alterados nos contrafactuais validos, media por semente."""
+    out = []
+    for r in runs:
+        vals = []
+        for p in r["pairs"]:
+            if tree:
+                v = p["all"]["k_min_mu"] if proc == "minimal" else (
+                    p["all"]["variants"][proc]["n_changed"] if p["all"]["variants"][proc]["valid"] else None)
+            else:
+                res = p["cf"]["all"].get(proc)
+                v = None if res is None else (res["n_changed"] if proc == "minimal" else
+                                              (res["n_changed"] if res.get("valid") else None))
+            if v is not None:
+                vals.append(v)
+        out.append(np.mean(vals) if vals else np.nan)
+    return np.asarray(out)
 
 
 def pairs(out: Path, root: Path, block: str) -> None:
-    import letter_case_study as L
+    import matplotlib.lines as mlines
+    from matplotlib.ticker import MaxNLocator
 
-    runs = {b: [json.loads(f.read_text(encoding="utf-8")) for f in sorted((root / f"{b}_case" / "runs").glob("seed*.json"))]
-            for b in ("letter", "pendigits")}
-    budget = [json.loads(f.read_text(encoding="utf-8")) for f in sorted((root / "letter_budget" / "runs").glob("*.json"))]
-    fig, axes = T.grid(2, 2, width="full", height=5.0)
+    mlp = {b: _load_runs(root / f"{b}_case") for b, _ in CASES}
+    tree = {b: _load_runs(root / f"tree_counterfactual_{b}") for b, _ in CASES}
+    fig, axes = T.grid(2, 2, width="full", height=5.2)
 
-    for ax, base in ((axes[0, 0], "letter"), (axes[0, 1], "pendigits")):
-        rs = runs[base]
+    # (a, b) curvas de trocas no MLP
+    for ax, (base, title) in zip((axes[0, 0], axes[0, 1]), CASES):
+        rs = mlp[base]
         grid = np.asarray(rs[0]["grid"])
-        for kind in _present(rs, CASE_KINDS):
-            style = {**STYLE[kind], "label": L.LABEL[kind]}
-            style.pop("marker", None)
-            ax.plot(grid, np.mean([r["curves"][_key(kind, block)] for r in rs], 0), lw=1.3, **style)
-        ax.set_title(f"\\texttt{{{base}}}" if False else base, fontsize=7.5)
+        for kind in CASE_KINDS:
+            key = f"{kind}@{block}" if kind in ("method", "floor") else kind
+            if key not in rs[0]["curves"]:
+                continue
+            style = {k: v for k, v in STYLE[kind].items() if k != "marker"}
+            style["label"] = CASE_LABEL[kind]
+            lw = 1.8 if kind == "method" else 1.1
+            ax.plot(grid, np.mean([r["curves"][key] for r in rs], 0), lw=lw, **style)
+        ax.set_title(f"{title}, MLP", fontsize=7.5)
         ax.set_xlabel("fração dos atributos de j trocados em i")
         ax.set_ylabel("fração dos pares na classe de j")
         T.despine(ax)
         T.decimal(ax, "both", 1)
 
-    # (c) arvore: um marcador por base para cada ranking
+    # (c) arvore nos rotulos: o atributo do corte entre os 3 primeiros
     ax = axes[1, 0]
-    tops = {b: _tree_top3(runs[b], block) for b in runs}
-    kinds = [k for k in CASE_KINDS if all(k in tops[b] for b in tops)]
-    y = np.arange(len(kinds))[::-1]
-    for off, base, marker in ((0.15, "letter", "o"), (-0.15, "pendigits", "^")):
-        for yi, k in zip(y, kinds):
-            v = tops[base][k]
-            color = STYLE[k]["color"]
+    kinds = [k for k in CASE_KINDS if k not in ("floor",)]
+    y = np.arange(len(kinds) + 1)[::-1]
+    for off, (base, _), marker in zip((0.15, -0.15), CASES, ("o", "^")):
+        rows = [(_tree_top3(mlp[base], k, block), STYLE[k]["color"]) for k in kinds]
+        rows.append((_chance_top3(mlp[base]), T.CONTROL))
+        for yi, (v, color) in zip(y, rows):
             ax.plot([v.mean()], [yi + off], linestyle="none", marker=marker, ms=4.2, color=color,
                     markerfacecolor=color if base == "letter" else "white", markeredgewidth=0.9)
             ax.plot([v.mean() - v.std(), v.mean() + v.std()], [yi + off] * 2, color=color, lw=0.8)
     ax.set_yticks(y)
-    ax.set_yticklabels([L.LABEL[k] for k in kinds], fontsize=6.0)
+    ax.set_yticklabels([CASE_LABEL[k] for k in kinds] + ["acaso"], fontsize=6.0)
+    ax.set_xlim(0, 1)
     ax.set_xlabel("pares com o atributo da árvore entre os 3 primeiros")
-    import matplotlib.lines as mlines
     ax.legend([mlines.Line2D([], [], color=T.INK_SOFT, marker="o", linestyle="none", ms=4),
                mlines.Line2D([], [], color=T.INK_SOFT, marker="^", markerfacecolor="white", linestyle="none", ms=4)],
-              ["letter", "pendigits"], fontsize=6.0, loc="upper left", frameon=False)
+              [title for _, title in CASES], fontsize=6.0, loc="lower right", frameon=False)
     T.despine(ax)
     T.decimal(ax, "x", 1)
 
-    # (d) orcamento: o metodo, de custo fixo, contra o Shapley amostrado e o LIME
+    # (d) atributos alterados pela construcao do contrafactual
     ax = axes[1, 1]
-    budgets, lb = budget[0]["budgets"], budget[0]["lime_budgets"]
-    cost = budget[0]["method_cost"]["forward_equivalent"]
-    m = np.array([r["auc"]["method"] for r in budget])
-    st = STYLE["method"]
-    ax.axhspan(m.mean() - m.std(), m.mean() + m.std(), color=st["color"], alpha=0.12, lw=0)
-    ax.errorbar([cost], [m.mean()], yerr=[m.std()], fmt="o", ms=5, capsize=2.0, color=st["color"], zorder=5)
-    for prefix, bs, kind, name in (("shap", budgets, "shap_baseline", "Shapley amostrado"),
-                                   ("lime", lb, "lime", "LIME contrastivo")):
-        v = np.array([[r["auc"][f"{prefix}@{b}"] for b in bs] for r in budget])
-        c = STYLE[kind]["color"]
-        ax.fill_between(bs, v.mean(0) - v.std(0), v.mean(0) + v.std(0), color=c, alpha=0.14, lw=0)
-        ax.plot(bs, v.mean(0), lw=1.2, ms=3.2, color=c, marker=STYLE[kind].get("marker", "o"), markeredgewidth=0.0)
-        ax.text(bs[-1], v.mean(0)[-1] - 0.012, name, color=c, fontsize=6.0, ha="right", va="top")
-    ax.text(cost * 1.15, m.mean() + m.std() + 0.004, "método", color=st["color"], fontsize=6.0, ha="left", va="bottom")
-    ax.axvline(cost, color=T.RULE, lw=0.8, zorder=0)
-    ax.set_xscale("log")
-    ax.set_xlabel("avaliações do modelo por par (letter)")
-    ax.set_ylabel("área sob a curva de trocas")
+    settings = [(base, title, False) for base, title in CASES] + [(base, title, True) for base, title in CASES]
+    width = 0.8 / len(CF_PROCS)
+    for si, (base, title, is_tree) in enumerate(settings):
+        runs = tree[base] if is_tree else mlp[base]
+        for pi, (key_mlp, key_tree, label, color) in enumerate(CF_PROCS):
+            key = key_tree if is_tree else key_mlp
+            if key is None:
+                continue
+            v = _cf_changed(runs, key, is_tree)
+            ax.bar(si + (pi - (len(CF_PROCS) - 1) / 2) * width, np.nanmean(v), width * 0.92, yerr=np.nanstd(v),
+                   color=color, error_kw={"lw": 0.6, "capsize": 1.2}, label=label if si == 0 else None)
+    ax.set_xticks(np.arange(len(settings)))
+    ax.set_xticklabels([f"{t}\n{'árvore' if tr else 'MLP'}" for _, t, tr in settings], fontsize=6.3)
+    ax.set_ylabel("atributos alterados")
+    ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+    ax.legend(fontsize=5.8, loc="upper left", frameon=False)
     T.despine(ax)
-    T.decimal(ax, "y", 2)
 
     T.panel_tags(axes)
     fig.tight_layout()
-    # legenda das curvas (vale para a, b e, nas cores, para c e d) na margem esquerda de (a), que os
-    # rotulos longos de (c) ja reservam na coluna da esquerda
+    # a legenda das curvas (vale para a e b) na margem esquerda de (a), que os rotulos longos de (c)
+    # ja reservam na coluna da esquerda
     a = axes[0, 0]
     handles, names = a.get_legend_handles_labels()
     label = a.yaxis.label.get_window_extent(fig.canvas.get_renderer()).transformed(fig.transFigure.inverted())

@@ -4,7 +4,7 @@ A segunda base de imagens do artigo. Ela entra por dois motivos: e a base em que
 literatura de similaridade de representacoes mais se apoia (Kornblith et al., 2019), e a
 hierarquia oficial de superclasses e uma referencia semantica externa ao modelo -- o modelo e
 treinado so nas 100 classes finas e nunca ve a superclasse, que serve apenas para conferir se
-as distancias entre classes refletem a semantica (pergunta P9).
+as distancias entre classes refletem a semantica (pergunta P8).
 
 A base fica fora do repositorio, em `~/Desktop/torch/data/cifar100/cifar-100-python/` (os
 pickles oficiais `train`, `test` e `meta`). A particao e a oficial: 50 000 de treino e 10 000

@@ -19,10 +19,15 @@ A arvore tem explicacao propria, e o que se testa e se o metodo a recupera:
   2. datacao    a profundidade em que esse atributo passa a ser o 1º do metodo coincide com a
                 profundidade em que os caminhos se separam?
   3. troca      teste contrafactual na propria arvore, e o numero de trocas que cada ranking
-                precisa contra o minimo exato (enumeracao dos 2^F subconjuntos);
+                precisa contra o minimo exato (`tree_min_flip`, equivalente a enumerar os 2^F
+                subconjuntos, mas so pelos caminhos alcancaveis);
   4. global     parcela media do metodo contra a importancia de Gini da arvore.
 
-Referencias: Shapley exato da arvore com j de referencia (jogo sobre P(c_j) − P(c_i)), SHAP de
+Base: a de `FANNAR_CASE` (`src/case.py`), com os pares de `src.case.select_pairs` sobre as predicoes
+da propria arvore.
+
+Referencias: Shapley exato da arvore com j de referencia (jogo sobre P(c_j) − P(c_i), pelo TreeSHAP
+intervencional com x_i de fundo, `tree_baseline_shapley`), SHAP de
 arvore (TreeExplainer) para o global, |Δx|, ordem aleatoria entre os atributos que diferem e o
 piso -- o metodo numa arvore treinada com os rotulos embaralhados (mesmos hiperparametros).
 Empates no ranking sao desfeitos ao acaso, em todos os rankings.
@@ -36,7 +41,6 @@ from __future__ import annotations
 import argparse
 import json
 import time
-from math import factorial
 from pathlib import Path
 
 import numpy as np
@@ -44,12 +48,13 @@ import shap
 from scipy.stats import spearmanr
 from sklearn.tree import DecisionTreeClassifier
 
-from letter_case_study import DATASET, DESCRIPTION, fmt, normalized, pm, rank_of, split_node
+from src.case import (DATASET, DESCRIPTION, MIN_LEAF, fmt, normalized, order_of, pm, rank_of, select_pairs,
+                      split_node, tree_baseline_shapley, tree_min_flip)
 from src.data_tabular import class_names, feature_names, load_tabular, split, standardize
 from tabular_differences import area
 
 SOURCES = ("caminho", "folga", "classes")
-# ablacao (e) da Subsecao `subsec:adicionais`: o caminho ja codifica o no de separacao, entao a
+# ablacao: o caminho ja codifica o no de separacao, entao a
 # recuperacao do corte so e evidencia do metodo se sobreviver sem essa fonte
 NO_PATH = ("folga", "classes")
 RANKINGS = ("method", "no_path", "shapley", "absdiff", "random", "floor")
@@ -116,26 +121,8 @@ def method_scores(geo: TreeGeometry, xi, xj, depths, only=SOURCES) -> dict:
 
 def tree_shapley(tree, xi, xj, ci: int, cj: int):
     """Shapley exato de v(S) = [P(c_j) − P(c_i)](x_j em S, x_i fora) e o menor S que muda a predicao."""
-    F = len(xi)
-    masks = np.arange(1 << F)
-    bits = ((masks[:, None] >> np.arange(F)) & 1).astype(bool)
-    rows = np.where(bits, xj, xi).astype(np.float32)
-    proba = tree.predict_proba(rows)
-    col = {c: k for k, c in enumerate(tree.classes_)}
-    v = proba[:, col[cj]] - proba[:, col[ci]]
-    size = bits.sum(1)
-    w = np.array([factorial(k) * factorial(F - k - 1) / factorial(F) for k in range(F)])
-    phi = np.empty(F)
-    for f in range(F):
-        without = masks[~bits[:, f]]
-        phi[f] = (w[size[without]] * (v[without | (1 << f)] - v[without])).sum()
-    flipped = tree.classes_[proba.argmax(1)] == cj
-    return phi, float(v[-1] - v[0]), int(size[flipped].min())
-
-
-def order_of(score: np.ndarray, rng) -> np.ndarray:
-    """Decrescente, com empates desfeitos ao acaso (lexsort ordena pela ultima chave)."""
-    return np.lexsort((rng.random(len(score)), -np.asarray(score)))
+    phi, total = tree_baseline_shapley(tree, xi, xj, ci, cj)
+    return phi, total, tree_min_flip(tree, xi, xj, cj)
 
 
 def flip(tree, xi, xj, cj: int, order: np.ndarray) -> np.ndarray:
@@ -167,9 +154,7 @@ def run_one(seed: int, args) -> dict:
 
     records, curves = [], {k: [] for k in (*RANKINGS, *SOURCES)}
     t_method, t_shap = [], []
-    for i in rng.choice(np.flatnonzero(preds == y_te), size=args.pairs, replace=False):
-        other = np.flatnonzero(preds != preds[i])
-        j = int(other[np.argmin(np.linalg.norm(Xs_te[other] - Xs_te[i], axis=1))])
+    for i, j in select_pairs(preds, y_te, Xs_te, rng, args.pairs):
         xi, xj, ci, cj = raw_te[i].astype(np.float64), raw_te[j].astype(np.float64), int(preds[i]), int(preds[j])
         differ = np.flatnonzero(np.abs(xj - xi) > 1e-9)
 
@@ -182,7 +167,7 @@ def run_one(seed: int, args) -> dict:
         t0 = time.perf_counter()
         phi, total, k_min = tree_shapley(tree, xi, xj, ci, cj)
         t_shap.append(time.perf_counter() - t0)
-        assert abs(phi.sum() - total) < 1e-9, "eficiencia do Shapley exato"
+        assert abs(phi.sum() - total) < 1e-6, "eficiencia do Shapley exato"
 
         random_score = np.zeros(F)
         random_score[differ] = rng.random(len(differ)) + 1.0
@@ -217,11 +202,11 @@ def run_one(seed: int, args) -> dict:
 
     grid = np.arange(F + 1) / F
     mean_curves = {k: np.mean(v, 0).tolist() for k, v in curves.items()}
-    tree_shap = shap.TreeExplainer(tree).shap_values(raw_te[: args.global_samples].astype(np.float64))
-    tree_shap = np.asarray(tree_shap)
-    if tree_shap.shape[0] != args.global_samples:  # (F, n, K) ou (n, F, K) conforme a versao
+    sample = raw_te[: args.global_samples].astype(np.float64)  # o teste pode ter menos amostras que isso
+    tree_shap = np.asarray(shap.TreeExplainer(tree).shap_values(sample))
+    if tree_shap.shape[0] != len(sample):  # (K, n, F) nas versoes antigas do shap, (n, F, K) nas novas
         tree_shap = np.moveaxis(tree_shap, 0, -1)
-    p = preds[: args.global_samples]
+    p = preds[: len(sample)]
     shap_global = np.abs(tree_shap[np.arange(len(p)), :, p]).mean(0)
     return {
         "seed": seed, "accuracy": float((preds == y_te).mean()), "depth": geo.max_depth,
@@ -245,7 +230,7 @@ def write_report(runs: list[dict], args, out: Path) -> None:
          f"- árvore: acerto {pm([r['accuracy'] for r in runs])}, {pm([r['leaves'] for r in runs], 0)} folhas, "
          f"profundidade {pm([r['depth'] for r in runs], 0)}",
          f"- árvore de rótulos embaralhados (piso): acerto {pm([r['shuffled_accuracy'] for r in runs])}",
-         f"- atributos que diferem entre i e j: {pm([p['n_differ'] for p in pairs], 1)} de 16\n"]
+         f"- atributos que diferem entre i e j: {pm([p['n_differ'] for p in pairs], 1)} de {len(feats)}\n"]
 
     L += ["## 1. O atributo em que a árvore separa i de j\n",
           "| ranking | 1º do ranking | entre os 3 primeiros | posto recíproco médio |", "|---|---|---|---|"]
@@ -277,7 +262,7 @@ def write_report(runs: list[dict], args, out: Path) -> None:
 
     L += ["## 3. Teste contrafactual na própria árvore\n",
           "AUC da fração de pares classificados como j conforme os k primeiros atributos são trocados, e o número "
-          "de trocas até a predição mudar, contra o mínimo exato (enumeração dos 2^16 subconjuntos).\n",
+          "de trocas até a predição mudar, contra o mínimo exato (equivalente à enumeração dos 2^F subconjuntos).\n",
           "| ranking | AUC | trocas até mudar | excesso sobre o mínimo | atinge o mínimo |", "|---|---|---|---|---|"]
     for k in (*RANKINGS, *SOURCES):
         L.append(f"| {LABEL[k]} | {pm([r['auc'][k] for r in runs])} | "
@@ -302,7 +287,7 @@ def write_report(runs: list[dict], args, out: Path) -> None:
     ts = np.array([normalized(r["global"]["tree_shap"]) for r in runs]).mean(0)
     for f in np.argsort(-gini):
         L.append(f"| {feats[f]} | {DESCRIPTION[feats[f]]} | {fmt(gini[f])} | {fmt(meth[f])} | {fmt(ts[f])} |")
-    (out / "tables.md").write_text("\n".join(L) + "\n")
+    (out / "tables.md").write_text("\n".join(L) + "\n", encoding="utf-8")
 
     E = ["# Exemplos — o método lendo a árvore (semente 0)\n"]
     for p in runs[0]["pairs"][: args.examples]:
@@ -319,17 +304,17 @@ def write_report(runs: list[dict], args, out: Path) -> None:
         for q in mo[:4]:
             E.append(f"| {feats[q]} | {p['raw_i'][q]:.0f} | {p['raw_j'][q]:.0f} | {mp[q]:.0%} | {spp[q]:.0%} |")
         E.append("")
-    (out / "exemplos.md").write_text("\n".join(E) + "\n")
+    (out / "exemplos.md").write_text("\n".join(E) + "\n", encoding="utf-8")
 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--seeds", type=int, default=5)
     ap.add_argument("--pairs", type=int, default=100)
-    ap.add_argument("--min-leaf", type=int, default=3)
+    ap.add_argument("--min-leaf", type=int, default=MIN_LEAF, help="o de `src.case.MIN_LEAF`, escolhido pela validacao")
     ap.add_argument("--global-samples", type=int, default=1000)
     ap.add_argument("--examples", type=int, default=4)
-    ap.add_argument("--out", default=("outputs/tree_case" if DATASET == "letter" else f"outputs/tree_case_{DATASET}"))
+    ap.add_argument("--out", default=f"outputs/tree_case_{DATASET}")
     args = ap.parse_args()
     out = Path(args.out)
     (out / "runs").mkdir(parents=True, exist_ok=True)
@@ -337,11 +322,11 @@ def main() -> None:
     for seed in range(args.seeds):
         path = out / "runs" / f"seed{seed}.json"
         if path.exists():
-            runs.append(json.loads(path.read_text()))
+            runs.append(json.loads(path.read_text(encoding="utf-8")))
             continue
         t0 = time.perf_counter()
         r = run_one(seed, args)
-        path.write_text(json.dumps(r, ensure_ascii=False))
+        path.write_text(json.dumps(r, ensure_ascii=False), encoding="utf-8")
         runs.append(r)
         a = r["auc"]
         print(f"semente {seed} ({time.perf_counter() - t0:.0f} s): acerto {r['accuracy']:.3f} | AUC método "

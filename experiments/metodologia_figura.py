@@ -13,7 +13,6 @@ Uso:
 from __future__ import annotations
 
 import argparse
-import copy
 from pathlib import Path
 
 import numpy as np

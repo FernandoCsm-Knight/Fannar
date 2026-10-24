@@ -1,22 +1,22 @@
-"""Comparacao com o mesmo orcamento de avaliacoes do modelo: metodo × SHAP × LIME na `letter`.
+"""Comparacao com o mesmo orcamento de avaliacoes do modelo: metodo × SHAP × LIME (base de `FANNAR_CASE`).
 
-O metodo tem custo fixo por par: F + 2 = 18 linhas numa passagem direta e numa reversa, o que
-equivale a ~3(F + 2) = 54 passagens diretas (uma reversa custa cerca de duas diretas). SHAP e
+O metodo tem custo fixo por par: F + 2 linhas numa passagem direta e numa reversa, o que equivale a
+~3(F + 2) passagens diretas (uma reversa custa cerca de duas diretas; 75 no HELOC, 54 na letter). SHAP e
 LIME, ao contrario, melhoram com mais avaliacoes. Para comparar com o mesmo custo, os dois sao
 rodados com orcamentos B por par e o metodo entra como um ponto fixo no seu custo:
 
   Shapley (j de referencia)  estimado por permutacoes amostradas (Strumbelj & Kononenko, 2014):
                              cada permutacao custa F + 1 avaliacoes, entao B da floor(B/(F+1))
-                             permutacoes; com B = 2^F o valor e o exato de `letter_case_study.py`.
-  LIME contrastivo           o mesmo de `letter_case_study.py`, com num_samples = B.
+                             permutacoes; o ultimo ponto, B = 2^F, e o exato (`baseline_shapley`).
+  LIME contrastivo           o mesmo de `case_study.py`, com num_samples = B.
 
-Os pares, os modelos e a arvore sao os de `letter_case_study.py` (mesma semente, mesma ordem de
-sorteio); o script confere que a AUC do metodo reproduz a gravada em `outputs/letter_case/runs`.
+Os pares, os modelos e a arvore sao os de `case_study.py` (mesma semente, mesma ordem de sorteio); o
+script confere que a AUC do metodo reproduz a gravada em `outputs/<base>_case/runs`.
 
-Saidas em `outputs/letter_budget/`: `runs/seed{s}.json`, `tables.md`, `budget.pdf/png`.
+Saidas em `outputs/<base>_budget/`: `runs/seed{s}.json`, `tables.md`, `budget.pdf/png`.
 
 Uso:
-    python letter_budget.py --seeds 5 --pairs 100
+    FANNAR_CASE=letter python case_budget.py --seeds 5 --pairs 100
 """
 
 from __future__ import annotations
@@ -32,39 +32,19 @@ import torch
 from lime.lime_tabular import LimeTabularExplainer
 from sklearn.tree import DecisionTreeClassifier
 
-from letter_case_study import DATASET, fmt, lime_contrastive, pm, rank_of, split_node
+from case_study import pair_scores, predict
+from src.attributions import baseline_shapley, lime_contrastive, sampled_shapley
+from src.case import DATASET, MIN_LEAF, fmt, pm, rank_of, select_pairs, split_node
 from src.data_tabular import load_tabular, split, standardize
 from src.mlp import ResidualMLP
-from tabular_differences import area, flip_curve, method_scores
+from tabular_differences import area, flip_curve
 from tabular_suite import train
 
-BUDGETS = (18, 54, 100, 250, 500, 1000, 5000)
-
-
-def sampled_shapley(model, x_from, x_to, c_from: int, c_to: int, device, budget: int, rng) -> np.ndarray:
-    """Shapley de v(S) = m(x_to em S, x_from fora), por permutacoes: floor(budget/(F+1)) delas."""
-    F = len(x_from)
-    n_perm = max(1, budget // (F + 1))
-    rows, perms = [], []
-    for _ in range(n_perm):
-        perm = rng.permutation(F)
-        cur = x_from.copy()
-        rows.append(cur.copy())
-        for f in perm:
-            cur[f] = x_to[f]
-            rows.append(cur.copy())
-        perms.append(perm)
-    with torch.no_grad():
-        logits = model(torch.from_numpy(np.asarray(rows, dtype=np.float32)).to(device))
-        v = (logits[:, c_to] - logits[:, c_from]).double().cpu().numpy().reshape(n_perm, F + 1)
-    phi = np.zeros(F)
-    for k, perm in enumerate(perms):
-        phi[perm] += np.diff(v[k])
-    return phi / n_perm
+BUDGETS = (25, 75, 150, 300, 1000, 5000)
 
 
 def run_one(seed: int, args, device) -> dict:
-    # --- mesma construcao de `letter_case_study.run_one` (mesma ordem de sorteios) ---
+    # --- mesma construcao de `case_study.run_one` (mesma ordem de sorteios) ---
     X, y = load_tabular(DATASET)
     tr, va, te = split(y, seed)
     X_tr, X_va, X_te = (a.astype(np.float32) for a in standardize(X[tr], X[va], X[te]))
@@ -74,16 +54,12 @@ def run_one(seed: int, args, device) -> dict:
     copy.deepcopy(model)  # o estudo de caso guarda a rede nao treinada aqui; nao altera sorteios
     train(model, X_tr, y[tr], X_va, y[va], device, args, seed)
     model.eval()
-    with torch.no_grad():
-        preds = model(torch.from_numpy(X_te).to(device)).argmax(1).cpu().numpy()
+    preds = predict(model, X_te, device)
     y_te, F = y[te], X.shape[1]
     rng = np.random.default_rng(seed)
-    tree = DecisionTreeClassifier(min_samples_leaf=3, random_state=seed).fit(raw_tr, y[tr])
+    tree = DecisionTreeClassifier(min_samples_leaf=MIN_LEAF, random_state=seed).fit(raw_tr, y[tr])
     tree_pred = tree.predict(raw_te)
-    pairs = []
-    for i in rng.choice(np.flatnonzero(preds == y_te), size=args.pairs, replace=False):
-        other = np.flatnonzero(preds != preds[i])
-        pairs.append((int(i), int(other[np.argmin(np.linalg.norm(X_te[other] - X_te[i], axis=1))])))
+    pairs = select_pairs(preds, y_te, X_te, rng, args.pairs)
 
     grid = np.linspace(0, 1, F + 1)
     budgets = [b for b in BUDGETS] + [2 ** F]
@@ -96,12 +72,13 @@ def run_one(seed: int, args, device) -> dict:
     for i, j in pairs:
         xi, xj, ci, cj = X_te[i].astype(np.float64), X_te[j].astype(np.float64), int(preds[i]), int(preds[j])
         t0 = time.perf_counter()
-        scores = {"method": method_scores(model, xi.astype(np.float32), xj.astype(np.float32), device,
-                                          args.fixed_target, args.shift)[args.block]}
+        scores = {"method": pair_scores(model, xi.astype(np.float32), xj.astype(np.float32), device,
+                                        args.fixed_target, args.shift)[args.block]}
         times["method"].append(time.perf_counter() - t0)
         for b in budgets:
             t0 = time.perf_counter()
-            scores[f"shap@{b}"] = sampled_shapley(model, xi, xj, ci, cj, device, b, srng)
+            scores[f"shap@{b}"] = (baseline_shapley(model, xi, xj, ci, cj, device)[0] if b == 2 ** F
+                                   else sampled_shapley(model, xi, xj, ci, cj, device, b, srng))
             times[f"shap@{b}"].append(time.perf_counter() - t0)
         for b in BUDGETS:
             t0 = time.perf_counter()
@@ -135,13 +112,13 @@ def write_report(runs, out: Path) -> None:
     for b in budgets:
         s = f"shap@{b}"
         lime = f"lime@{b}" if b in lb else None
-        row = [f"{b}" + (" (exato)" if b == 2 ** 16 else ""), pm([r["auc"][s] for r in runs]),
+        row = [f"{b}" + (" (exato)" if b == budgets[-1] else ""), pm([r["auc"][s] for r in runs]),
                f"{np.mean([r['auc'][s] > r['auc']['method'] for r in runs]):.0%}",
                pm([r["auc"][lime] for r in runs]) if lime else "—",
                f"{np.mean([r['auc'][lime] > r['auc']['method'] for r in runs]):.0%}" if lime else "—",
                pm([r["tree_top1"][s] for r in runs]), pm([r["tree_top1"][lime] for r in runs]) if lime else "—"]
         L.append("| " + " | ".join(row) + " |")
-    (out / "tables.md").write_text("\n".join(L) + "\n")
+    (out / "tables.md").write_text("\n".join(L) + "\n", encoding="utf-8")
 
 
 def plot(runs, path: str) -> None:
@@ -209,12 +186,12 @@ def main() -> None:
         r = run_one(seed, args, device)
         ref = Path(args.reference) / f"seed{seed}.json"
         if ref.exists():
-            want = json.loads(ref.read_text())["auc"][f"method@{args.block}"]
+            want = json.loads(ref.read_text(encoding="utf-8"))["auc"][f"method@{args.block}"]
             assert abs(r["auc"]["method"] - want) < 1e-6, f"pares ou modelo diferem do estudo de caso ({r['auc']['method']} × {want})"
         path.write_text(json.dumps(r))
         runs.append(r)
-        print(f"semente {seed} ({time.perf_counter() - t0:.0f} s): método {r['auc']['method']:.3f} | Shapley@54 "
-              f"{r['auc']['shap@54']:.3f} @5000 {r['auc']['shap@5000']:.3f} | LIME@54 {r['auc']['lime@54']:.3f} "
+        print(f"semente {seed} ({time.perf_counter() - t0:.0f} s): método {r['auc']['method']:.3f} | Shapley@75 "
+              f"{r['auc']['shap@75']:.3f} @5000 {r['auc']['shap@5000']:.3f} | LIME@75 {r['auc']['lime@75']:.3f} "
               f"@5000 {r['auc']['lime@5000']:.3f}", flush=True)
     write_report(runs, out)
     plot(runs, str(out / "budget.png"))

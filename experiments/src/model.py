@@ -1,4 +1,5 @@
-"""CIFAR-10 ResNet with named residual blocks as the probe points.
+"""ResNet with named residual blocks as the probe points (Oxford-IIIT Pet and CIFAR-100; the
+class keeps the name of the CIFAR-10 setup it was first written for).
 
 Six basic blocks in three stages of widths 64 / 128 / 256, plus the stem, giving
 seven states along the depth. Every probe point is the *residual stream after the

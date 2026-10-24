@@ -76,7 +76,7 @@ CLAIMS = [
     ("kNN: conjunta > só W", "knn_pred", "params"),
     ("AUC do acerto: conjunta > só W", "correctness_auc", "params"),
     ("CKA: metade residual prevê o acerto melhor que a vista", "cka_resid_auc", "key:cka_seen_auc"),
-    # P9: hierarquia semantica externa (so nas bases de imagens)
+    # P8: hierarquia semantica externa (so nas bases de imagens)
     ("semântica acima do piso", "semantic_auc", "floor"),
     ("semântica: conjunta > só A", "semantic_auc", "activations"),
 ]
@@ -94,7 +94,7 @@ LABELS = {
     "cka_alignment": "Alinhamento $a$ com a Gram das ativações (CKA)",
     "cka_seen_auc": "AUC do acerto na metade vista pela CKA",
     "cka_resid_auc": "AUC do acerto na metade residual",
-    "semantic_auc": "AUC da proximidade entre classes para o mesmo grupo semântico (P9)",
+    "semantic_auc": "AUC da proximidade entre classes para o mesmo grupo semântico (P8)",
     "cka_discarded": "Massa espectral descartada ao projetar a metade residual",
 }
 
@@ -145,7 +145,7 @@ def behaviour_references(probs: np.ndarray, labels: np.ndarray, n_classes: int,
     letter). A confusao suave S_ab + S_ba, com S_ab a probabilidade media que o modelo da a b
     nas amostras de a, usa toda a amostra e nao so os erros.
 
-    `groups` (P9) e o grupo semantico de cada classe (especie, superclasse). Vai junto a AUC
+    `groups` (P8) e o grupo semantico de cada classe (especie, superclasse). Vai junto a AUC
     com que a propria confusao suave separa os pares do mesmo grupo: se o comportamento do
     modelo ja carrega a hierarquia, uma geometria que a reproduz pode estar so refletindo o
     comportamento, e e contra esse valor que a leitura geometrica deve ser lida.

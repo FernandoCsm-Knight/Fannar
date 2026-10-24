@@ -1,6 +1,6 @@
-"""Leitura de pares com verdade de base conhecida (item (d) da Subsecao `subsec:adicionais`).
+"""Leitura de pares com verdade de base conhecida (P6).
 
-O teste de trocas da `letter` mede exatamente o jogo que o Shapley com j de referencia
+O teste de trocas mede exatamente o jogo que o Shapley com j de referencia
 decompoe, e por isso o favorece por construcao; a unica verificacao independente era a arvore.
 Aqui a referencia e externa ao modelo e a qualquer ranking: dados sinteticos em que se sabe
 quais atributos determinam o rotulo.
@@ -10,7 +10,7 @@ unicos que entram na geracao do rotulo (sem atributos redundantes nem repetidos,
 os demais sao ruido gaussiano independente do rotulo. Um MLP residual com a receita de
 `tabular_suite.py` e treinado sobre eles.
 
-Pares e rankings como em `letter_case_study.py`: i acertada pelo modelo, j a amostra do teste
+Pares e rankings como em `case_study.py`: i acertada pelo modelo, j a amostra do teste
 mais proxima nos atributos com outra predicao. Rankings comparados:
 
   method         Δd_f na Gram conjunta (alvo fixo), em cada bloco
@@ -28,7 +28,7 @@ Duas medidas:
   verdade de base  fracao dos `--informative` primeiros do ranking que sao atributos
                    informativos (precisao@k, k = numero de informativos); o acaso e k/F;
   trocas           a area sob a curva do teste contrafactual de `tabular_differences.py`,
-                   para comparar com a `letter`.
+                   para comparar com os estudos de caso.
 
 Uso:
     python synthetic_counterfactual.py --seeds 5 --pairs 100
@@ -46,8 +46,7 @@ import numpy as np
 import torch
 from sklearn.datasets import make_classification
 
-from letter_case_study import baseline_shapley, lime_contrastive
-from src.attributions import build_dice, dice_scores, integrated_gradients
+from src.attributions import baseline_shapley, build_dice, dice_scores, integrated_gradients, lime_contrastive
 from src.data_tabular import split, standardize
 from src.mlp import ResidualMLP
 from tabular_differences import area, flip_curve, gradxdelta, method_scores
@@ -162,7 +161,7 @@ def main() -> None:
     ap.add_argument("--seeds", type=int, default=5)
     ap.add_argument("--pairs", type=int, default=100)
     ap.add_argument("--n", type=int, default=20000)
-    ap.add_argument("--features", type=int, default=16, help="16, como na letter: o Shapley exato cabe")
+    ap.add_argument("--features", type=int, default=16, help="com 16, o Shapley exato cabe")
     ap.add_argument("--informative", type=int, default=4)
     ap.add_argument("--classes", type=int, default=6)
     ap.add_argument("--class-sep", type=float, default=1.5)

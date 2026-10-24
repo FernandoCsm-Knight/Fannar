@@ -1,4 +1,4 @@
-"""Figura da P9 (`res_semantica.pdf`): as distancias refletem uma hierarquia semantica externa?
+"""Figura da P8 (`res_semantica.pdf`): as distancias refletem uma hierarquia semantica externa?
 
 Um painel por base e arquitetura: AUC com que a proximidade media entre duas classes separa os
 pares do mesmo grupo semantico (especie no Pet, superclasse no CIFAR-100), por bloco, para a

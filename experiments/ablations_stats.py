@@ -1,4 +1,4 @@
-"""Datacao sem tendencia e testes estatisticos (itens (f) e (h) da Subsecao `subsec:adicionais`).
+"""Datacao sem tendencia (P7) e testes estatisticos (Subsecao `subsec:estatistica`).
 
 Nao treina nada: le os `runs/*.json` ja gravados pelas suites, pelas ablacoes e pela leitura de
 pares, e escreve `outputs/stats/tables.md` e `outputs/stats/stats.json`.
@@ -276,7 +276,7 @@ def main() -> None:
     L = ["# Datação sem tendência e testes estatísticos\n"]
 
     L += ["## (f) Datação: Spearman entre estabilidade à intervenção e k-vizinhos da conjunta\n",
-          "Por execução, alvo fixo. \"Bruto\" é o valor da Subseção P8; \"sem tendência\" usa as diferenças "
+          "Por execução, alvo fixo. \"Bruto\" é o valor da Subseção P7; \"sem tendência\" usa as diferenças "
           "entre blocos consecutivos. O p é do Wilcoxon sobre os valores sem tendência contra zero.\n",
           "| família | execuções | bruto | sem tendência | fração > 0 | p |", "|---|---|---|---|---|---|"]
     for name, path in suites.items():

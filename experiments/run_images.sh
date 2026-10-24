@@ -10,13 +10,13 @@ export PYTHONUTF8=1 PYTHONIOENCODING=utf-8
 
 step() { echo; echo "=== $(date '+%H:%M:%S') $*"; "$PY" "$@"; }
 
-step pets_suite.py --dataset pets --arch resnet --seeds "$SEEDS" --epochs 120      # P1-P4, P8, P9
-step pets_suite.py --dataset pets --arch vit --seeds "$SEEDS" --epochs 120         # P7
-step pets_suite.py --dataset cifar100 --arch resnet --seeds "$SEEDS" --epochs 60   # P1-P4, P8, P9
+step pets_suite.py --dataset pets --arch resnet --seeds "$SEEDS" --epochs 120      # P1-P4, P7, P8
+step pets_suite.py --dataset pets --arch vit --seeds "$SEEDS" --epochs 120         # P1-P5 no transformador
+step pets_suite.py --dataset cifar100 --arch resnet --seeds "$SEEDS" --epochs 60   # P1-P4, P7, P8
 step ablations.py --family pets --arch resnet --seeds "$SEEDS" --epochs 120
 step ablations.py --family pets --arch vit --seeds "$SEEDS" --epochs 120
 step ablations.py --family cifar100 --arch resnet --seeds "$SEEDS" --epochs 60
 step pets_regions.py --seed 0 --arch resnet                                        # P5
-step pets_regions.py --seed 0 --arch vit                                           # P5, P7
+step pets_regions.py --seed 0 --arch vit                                           # P5 no transformador
 step pets_differences.py --pairs 20                                                # P6 nas imagens
 echo; echo "=== $(date '+%H:%M:%S') imagens concluido"

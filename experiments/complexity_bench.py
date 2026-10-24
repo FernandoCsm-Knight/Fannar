@@ -41,9 +41,8 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from letter_case_study import baseline_shapley, library_shap, lime_contrastive
-from letter_budget import sampled_shapley
-from src.attributions import build_dice, dice_scores, integrated_gradients
+from src.attributions import (baseline_shapley, build_dice, dice_scores, integrated_gradients, library_shap,
+                              lime_contrastive, sampled_shapley)
 from src.mlp import ResidualMLP
 from tabular_differences import gradxdelta, method_scores
 

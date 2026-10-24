@@ -1,4 +1,4 @@
-"""Ablacoes da composicao e referencias de confianca (Subsecao `subsec:adicionais`, itens a-c).
+"""Ablacoes da composicao (P2) e referencias de confianca e de vizinhanca (P1).
 
 A suite (`suite.py`) compara a Gram conjunta com cada fonte isolada, o que mostra se *juntar*
 as fontes ajuda, mas nao se a forma *multiplicativa* e o que ajuda, nem se a normalizacao

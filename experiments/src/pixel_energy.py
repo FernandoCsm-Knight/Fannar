@@ -360,9 +360,9 @@ def deletion_insertion(
 ) -> dict:
     """Remove (ou insere) pixels na ordem decrescente do mapa e mede a margem da rede.
 
-    O mapa, na resolucao do bloco, e levado a 32x32 por interpolacao bilinear; empates
-    (inevitaveis em 8x8 ampliado) sao quebrados por um ruido minusculo com semente fixa.
-    O pixel removido vai para 0 no espaco normalizado, isto e, a cor media do CIFAR-10.
+    O mapa, na resolucao do bloco, e levado a resolucao da imagem por interpolacao bilinear;
+    empates (inevitaveis num mapa ampliado) sao quebrados por um ruido minusculo com semente fixa.
+    O pixel removido vai para 0 no espaco normalizado, isto e, a cor media do treino.
     A margem e a do alvo limpo, dividida pela margem limpa: 1 = intacta, 0 = anulada.
 
     Por que a ordem aleatoria nao e piso aqui: remover pixels espalhados produz ruido de
@@ -375,7 +375,7 @@ def deletion_insertion(
     """
     n = len(x)
     size = x.shape[-2:]
-    # `group` e calibrado para 32x32; cada lote passa group * 3 * (steps + 1) imagens pela rede,
+    # `group` e calibrado para imagens 32x32 e reescalado pela area; cada lote passa group * 3 * (steps + 1) imagens pela rede,
     # entao o grupo encolhe com a area (6 em 64x64) para caber na memoria da GPU
     group = max(1, int(group * 1024 // (size[0] * size[1])))
     m = torch.from_numpy(np.nan_to_num(np.asarray(maps, dtype=np.float32), nan=0.0))[:, None]

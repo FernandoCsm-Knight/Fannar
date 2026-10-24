@@ -1,5 +1,4 @@
-"""Ablacoes da composicao e referencias de confianca e de vizinhanca (itens a-c da Subsecao
-`subsec:adicionais`).
+"""Ablacoes da composicao (P2) e referencias de confianca e de vizinhanca (P1).
 
 Mesmo protocolo das suites (`tabular_suite.py`, `pets_suite.py`): mesmas bases, sementes,
 amostra de 500 objetos do teste, alvo fixo e piso cruzado. Muda so o que se compara (ver

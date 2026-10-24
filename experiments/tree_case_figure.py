@@ -1,14 +1,14 @@
 """Figura lado a lado: o caminho de decisao da arvore e a leitura do metodo sobre a mesma arvore.
 
-Para cada par (i, j), a esquerda mostra os caminhos de i e de j na arvore de decisao da
-`letter` (semente 0): o trecho comum, o no em que eles se separam e os ramos ate as folhas. A
+Para cada par (i, j), a esquerda mostra os caminhos de i e de j na arvore de decisao da base
+de `FANNAR_CASE` (semente 0): o trecho comum, o no em que eles se separam e os ramos ate as folhas. A
 direita, alinhada pela profundidade, mostra a parcela de cada atributo no Δd do metodo em cada
 profundidade ℓ (fontes caminho, folga e classes; `tree_case_study.py`). A arvore se explica
 pelo proprio caminho; a figura mostra o metodo recuperando essa explicacao -- o atributo do
 corte passa a dominar exatamente na profundidade em que os caminhos se separam.
 
 A arvore e reajustada com os mesmos dados e a mesma semente de `tree_case_study.py`, e o script
-confere que o no de separacao coincide com o gravado em `outputs/tree_case/runs/seed0.json`.
+confere que o no de separacao coincide com o gravado em `outputs/tree_case_<base>/runs/seed0.json`.
 
 Uso:
     python tree_case_figure.py --pairs 41 91
@@ -24,7 +24,7 @@ import numpy as np
 from matplotlib.patches import Rectangle
 from sklearn.tree import DecisionTreeClassifier
 
-from letter_case_study import DATASET, split_node
+from src.case import DATASET, MIN_LEAF, split_node
 from src import theme as T
 from src.data_tabular import class_names, feature_names, load_tabular, split
 
@@ -151,9 +151,9 @@ def draw_method(ax, p, feats, geom) -> None:
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--pairs", type=int, nargs="+", default=[41, 91])
-    ap.add_argument("--run", default=("outputs/tree_case" if DATASET == "letter" else f"outputs/tree_case_{DATASET}") + "/runs/seed0.json")
-    ap.add_argument("--min-leaf", type=int, default=3)
-    ap.add_argument("--out", default=("outputs/tree_case" if DATASET == "letter" else f"outputs/tree_case_{DATASET}") + "/tree_vs_method.pdf")
+    ap.add_argument("--run", default=f"outputs/tree_case_{DATASET}/runs/seed0.json")
+    ap.add_argument("--min-leaf", type=int, default=MIN_LEAF, help="o de `src.case.MIN_LEAF`")
+    ap.add_argument("--out", default=f"outputs/tree_case_{DATASET}/tree_vs_method.pdf")
     args = ap.parse_args()
 
     run = json.loads(Path(args.run).read_text())

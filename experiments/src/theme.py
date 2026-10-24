@@ -79,16 +79,6 @@ SURFACE = "white"
 
 SEQ = sns.color_palette("Blues", as_cmap=True)
 
-# classe: as dez classes usam a mesma paleta, com o marcador separando os pares que
-# compartilham matiz. Pares confundíveis (cat/dog, automobile/truck, deer/horse) nunca
-# ficam no mesmo matiz.
-CLASS_PAIRS = [(0, 8), (1, 9), (2, 6), (3, 7), (5, 4)]
-CLASS_STYLE = {
-    cls: (PALETTE[i], "o" if j == 0 else "^")
-    for i, pair in enumerate(CLASS_PAIRS)
-    for j, cls in enumerate(pair)
-}
-
 WIDTH = {"col": 3.35, "wide": 5.0, "full": 6.9, "page": 9.2}
 
 # Título e nota de rodapé vão no `\caption` do LaTeX, não dentro da imagem. `T.title` e
@@ -113,16 +103,6 @@ def control(label: str = "controle", marker: str = "s") -> dict:
         "color": CONTROL, "marker": marker, "label": label, "linestyle": (0, (3.5, 2.5)),
         "markerfacecolor": SURFACE, "markeredgecolor": CONTROL, "markeredgewidth": 0.8,
     }
-
-
-def hue_map(keys) -> dict:
-    """rótulo -> cor, para passar em `palette=` das funções do seaborn."""
-    return {SERIES[k][2]: SERIES[k][0] for k in keys}
-
-
-def marker_map(keys) -> dict:
-    """rótulo -> marcador, para passar em `markers=` das funções do seaborn."""
-    return {SERIES[k][2]: SERIES[k][1] for k in keys}
 
 
 # --------------------------------------------------------------------------
@@ -246,19 +226,6 @@ def note(fig, text: str, y: float = 0.0, width: int | None = None) -> None:
         text = textwrap.fill(text, width=width)
     fig.text(0.5, y, text, ha="center", va="top", fontsize=7.0, color=INK_FAINT,
              linespacing=1.5)
-
-
-def class_legend(fig, classes: list[str], ncol: int = 5, y: float = 0.0) -> None:
-    handles = [
-        plt.Line2D(
-            [], [], linestyle="none", marker=CLASS_STYLE[i][1], markersize=4.2,
-            markerfacecolor=CLASS_STYLE[i][0], markeredgecolor=SURFACE,
-            markeredgewidth=0.4, label=name,
-        )
-        for i, name in enumerate(classes)
-    ]
-    fig.legend(handles=handles, frameon=False, loc="lower center", ncol=ncol,
-               bbox_to_anchor=(0.5, y))
 
 
 def save(fig, path: str | Path, formats: tuple[str, ...] = ("pdf", "png")) -> None:

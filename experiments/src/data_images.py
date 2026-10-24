@@ -36,6 +36,3 @@ def hierarchy(name: str, data: dict) -> np.ndarray:
     return out
 
 
-def same_group(groups: np.ndarray) -> np.ndarray:
-    """(K, K) booleana: as duas classes estao no mesmo grupo semantico."""
-    return groups[:, None] == groups[None, :]

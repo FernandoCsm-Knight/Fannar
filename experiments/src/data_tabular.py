@@ -1,4 +1,4 @@
-"""Bases tabulares multiclasse do OpenML para o teste de estabilidade do metodo.
+"""Bases tabulares do OpenML: as vinte da suite de estabilidade e as dos estudos de caso.
 
 Regra de selecao: todas as bases multiclasse do OpenML-CC18 (estudo 99) com pelo menos 2 000
 amostras, menos as duplicatas (as outras cinco `mfeat-*` descrevem os mesmos 2 000 digitos da
@@ -22,34 +22,12 @@ Atributos categoricos binarios viram 0/1, e os de mais niveis (`connect-4`) vira
 from __future__ import annotations
 
 import functools
-import os
-import socket
 import warnings
 
 import numpy as np
 from sklearn.datasets import fetch_openml
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
-
-from . import data_mirror
-
-
-@functools.lru_cache(maxsize=1)
-def use_mirror() -> bool:
-    """Le das fontes originais (`data_mirror`) quando o OpenML nao responde.
-
-    `FANNAR_DATA=openml` ou `FANNAR_DATA=mirror` forcam uma das duas; sem a variavel, um teste
-    de conexao de poucos segundos decide, em vez de deixar o `fetch_openml` esperar minutos.
-    """
-    choice = os.environ.get("FANNAR_DATA", "").lower()
-    if choice in ("openml", "mirror"):
-        return choice == "mirror"
-    try:
-        socket.create_connection(("api.openml.org", 443), timeout=5).close()
-        return False
-    except OSError:
-        warnings.warn("OpenML inacessivel: usando as fontes originais (src/data_mirror.py)")
-        return True
 
 DATASETS = {
     "letter": 6,
@@ -75,37 +53,32 @@ DATASETS = {
 }
 MAX_SAMPLES = {name: 30000 for name in DATASETS}
 
-# Bases fora da suite de estabilidade, usadas so como exemplo de explicacao. O Titanic e
-# binario: a margem contrastiva vira a diferenca entre dois logits, e Γ passa a apontar na
-# mesma direcao para todas as amostras (ver `titanic_differences.py`).
-EXTRA = {"titanic": 40945}
+# Base fora da suite: o HELOC (FICO, 2018), estudo de caso de P6 junto com a letter (`src/case.py`).
+EXTRA = {"heloc": 46932}
 ALL = DATASETS | EXTRA
 
-# Titanic: ficam de fora as colunas de identificacao (nome, bilhete, destino) e as que vazam o
-# desfecho (`boat` e `body` so existem para quem entrou num bote ou foi identificado depois);
-# `cabin` entra so como indicador de haver registro de cabine, nunca o codigo em si.
+# HELOC: valores especiais do dicionario da FICO. -9 = sem registro de bureau (as 588 linhas em
+# que todos os atributos sao -9 saem); -8 = sem conta ou consulta valida; -7 = a condicao nunca
+# ocorreu, e so aparece em atributos "meses desde" (MSinceMostRecentDelq,
+# MSinceMostRecentInqexcl7days), em que "nunca" e mais antigo que qualquer ocorrencia: vira o maximo
+# observado + 1. -8 e os -9 restantes viram a mediana dos valores validos. Indicadores de ausencia
+# dobrariam o custo exato (2^F) a cada coluna, entao os 23 atributos ficam como estao.
 
 
-def _titanic() -> tuple[np.ndarray, np.ndarray, list[str], list[str]]:
-    """Titanic com codificacao explicita: (X, y, nomes dos atributos, nomes das classes)."""
-    warnings.filterwarnings("ignore")
-    df = (data_mirror.titanic_frame() if use_mirror()
-          else fetch_openml(data_id=EXTRA["titanic"], as_frame=True, parser="auto").frame)
-    y = df["survived"].astype(int).to_numpy()
-    cols = {
-        "classe (1–3)": df["pclass"].astype(float),
-        "sexo (1 = mulher)": (df["sex"] == "female").astype(float),
-        "idade": df["age"].astype(float).fillna(df["age"].median()),
-        "irmãos/cônjuge a bordo": df["sibsp"].astype(float),
-        "pais/filhos a bordo": df["parch"].astype(float),
-        "tarifa": df["fare"].astype(float).fillna(df["fare"].median()),
-        "cabine registrada": df["cabin"].notna().astype(float),
-        "tamanho da família": (df["sibsp"] + df["parch"] + 1).astype(float),
-    }
-    for port, label in (("S", "Southampton"), ("C", "Cherbourg"), ("Q", "Queenstown")):
-        cols[f"embarque {label}"] = (df["embarked"] == port).astype(float)
-    X = np.column_stack([c.to_numpy() for c in cols.values()])
-    return X, y, list(cols), ["não sobreviveu", "sobreviveu"]
+@functools.lru_cache(maxsize=1)
+def _heloc() -> tuple[np.ndarray, np.ndarray, list[str], list[str]]:
+    bunch = fetch_openml(data_id=EXTRA["heloc"], as_frame=True, parser="auto")
+    df = bunch.data.astype(float)
+    keep = ~(df == -9).all(1).to_numpy()
+    df, target = df[keep].copy(), np.asarray(bunch.target)[keep]
+    for c in df.columns:
+        col = df[c]
+        valid = col[col >= 0]
+        col = col.where(col != -7, valid.max() + 1)
+        df[c] = col.where(col >= 0, valid.median())
+    classes = ["Bad", "Good"]
+    y = np.array([classes.index(str(t)) for t in target], dtype=np.int64)
+    return df.to_numpy(), y, list(df.columns), classes
 
 
 @functools.lru_cache(maxsize=2)  # as bases de imagem achatadas ocupam centenas de MB
@@ -136,33 +109,26 @@ def _openml(name: str) -> tuple[np.ndarray, np.ndarray, list[str], list[str]]:
 def feature_names(name: str) -> list[str]:
     """Nomes dos atributos, na ordem das colunas de `load_tabular`."""
     warnings.filterwarnings("ignore")
-    if name == "titanic":
-        return _titanic()[2]
-    if use_mirror():
-        return data_mirror.load(name)[2]
+    if name == "heloc":
+        return _heloc()[2]
     return _openml(name)[2]
 
 
 def class_names(name: str) -> list[str]:
     """Nomes das classes, na ordem dos codigos inteiros de `load_tabular`."""
     warnings.filterwarnings("ignore")
-    if name == "titanic":
-        return _titanic()[3]
-    if use_mirror():
-        return data_mirror.load(name)[3]
+    if name == "heloc":
+        return _heloc()[3]
     return _openml(name)[3]
 
 
 def load_tabular(name: str, seed: int = 0) -> tuple[np.ndarray, np.ndarray]:
     """(X float32, y int64) de uma base do OpenML, com a subamostragem fixa por semente 0."""
     warnings.filterwarnings("ignore")
-    if name == "titanic":
-        X, y, _, _ = _titanic()
-        return X.astype(np.float32), y.astype(np.int64)
-    if use_mirror():
-        X, y, _, _ = data_mirror.load(name)
-    else:
-        X, y, _, _ = _openml(name)
+    if name == "heloc":
+        X, y, _, _ = _heloc()
+        return X.astype(np.float32), y
+    X, y, _, _ = _openml(name)
     X = np.nan_to_num(np.asarray(X, dtype=np.float64))
     if name in MAX_SAMPLES and len(y) > MAX_SAMPLES[name]:
         keep, _ = train_test_split(np.arange(len(y)), train_size=MAX_SAMPLES[name],

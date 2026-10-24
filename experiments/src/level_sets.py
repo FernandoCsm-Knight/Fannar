@@ -7,8 +7,8 @@ lido nessa Gram **com** a intensidade de cada posicao.
 As distancias dos conjuntos de nivel sao lidas depois de remover a intensidade:
 G̃ = D^{-β/2} G D^{-β/2}, com β = 1 (a transformacao angular T_a) e um piso de 10% da mediana
 na diagonal para posicoes de energia quase nula, que nao tem direcao definida. Sem isso, a
-distancia a uma referencia e dominada pela energia da outra posicao (medido no Cat/Dog:
-Spearman 0,50–0,74 com a energia nos blocos rasos), e as faixas "proximas" caem no fundo.
+distancia a uma referencia e dominada pela energia da outra posicao, sobretudo nos blocos rasos,
+e as faixas "proximas" caem no fundo.
 Normalizacoes parciais (β = 0,5 e 0,75) nao bastaram.
 
 As referencias sao posicoes tipicas, nao extremas: s0 e o medoide (na distancia angular) dos

@@ -1,4 +1,4 @@
-"""Contrafactual sequencial guiado pela geometria, na arvore de decisao.
+"""Contrafactual sequencial guiado pela geometria, na arvore de decisao (base de `FANNAR_CASE`).
 
 O teste de trocas de `tree_case_study.py` leva os atributos de i ao valor de j um de cada vez, na
 ordem de Δd_f calculada uma unica vez a partir de i, e por isso nao enxerga interacoes: o metodo
@@ -21,13 +21,16 @@ Variantes, para separar o que vem de cada escolha:
                            P(c_j) − P(c_i) da arvore -- a guia pela saida, como no NICE;
   aleatoria                ordem aleatoria entre os atributos que diferem de μ;
   minimo exato             menor subconjunto de atributos levados a μ que muda a predicao
-                           (enumeracao dos 2^F subconjuntos, com t = 1).
+                           (`tree_min_flip`, exato como a enumeracao dos 2^F subconjuntos, t = 1).
+
+Pares: os de `src.case.select_pairs`, sobre as predicoes da propria arvore. Cada procedimento roda com
+todos os atributos e so com os mutaveis (`src.case.IMMUTABLE` congelados).
 
 Medidas por par: validade, numero de atributos alterados, distancia L1 padronizada a x_i e
 plausibilidade (distancia padronizada ao objeto de treino mais proximo predito como c_j).
 
 Uso:
-    FANNAR_DATA=mirror python tree_counterfactual.py --seeds 5 --pairs 100
+    python tree_counterfactual.py --seeds 5 --pairs 100
 """
 
 from __future__ import annotations
@@ -40,9 +43,9 @@ from pathlib import Path
 import numpy as np
 from sklearn.tree import DecisionTreeClassifier
 
-from letter_case_study import DATASET, pm
-from src.data_tabular import load_tabular, split, standardize
-from tree_case_study import TreeGeometry, flip, method_scores, order_of, tree_shapley
+from src.case import DATASET, IMMUTABLE, MIN_LEAF, mutable_indices, order_of, pm, select_pairs, tree_min_flip
+from src.data_tabular import feature_names, load_tabular, split
+from tree_case_study import TreeGeometry, flip, method_scores, tree_shapley
 
 STEPS = (0.25, 0.5, 0.75, 1.0)
 VARIANTS = ("seq_geo", "fixed_geo", "seq_out", "random")
@@ -65,10 +68,10 @@ def margin(tree, X: np.ndarray, ci: int, cj: int) -> np.ndarray:
     return p[:, col[cj]] - p[:, col[ci]]
 
 
-def counterfactual(tree, geo, xi, mu, S, ci, cj, depth, mode: str, rng):
+def counterfactual(tree, geo, xi, mu, S, ci, cj, depth, mode: str, rng, allowed):
     """Constroi o contrafactual; devolve (x', atributos alterados em ordem, valido)."""
     x = xi.copy()
-    remaining = [f for f in range(len(xi)) if abs(mu[f] - xi[f]) > 1e-9]
+    remaining = [int(f) for f in allowed if abs(mu[f] - xi[f]) > 1e-9]
     if mode == "fixed_geo":
         cand = np.repeat(xi[None], len(remaining), axis=0)
         cand[np.arange(len(remaining)), remaining] = mu[remaining]
@@ -98,21 +101,13 @@ def counterfactual(tree, geo, xi, mu, S, ci, cj, depth, mode: str, rng):
     return x, changed, False
 
 
-def minimal_subset(tree, xi, mu, cj) -> int | None:
-    """Menor numero de atributos levados a μ (t = 1) que muda a predicao para c_j."""
-    F = len(xi)
-    masks = np.arange(1 << F)
-    bits = ((masks[:, None] >> np.arange(F)) & 1).astype(bool)
-    flipped = tree.predict(np.where(bits, mu, xi).astype(np.float32)) == cj
-    return int(bits.sum(1)[flipped].min()) if flipped.any() else None
-
-
 def run_one(seed: int, args) -> dict:
     X, y = load_tabular(DATASET)
     tr, va, te = split(y, seed)
     raw_tr, raw_te, y_te = X[tr].astype(np.float64), X[te].astype(np.float64), y[te]
     rng = np.random.default_rng(seed)
     tree = DecisionTreeClassifier(min_samples_leaf=args.min_leaf, random_state=seed).fit(raw_tr, y[tr])
+    mutable = mutable_indices(feature_names(DATASET))
     scale = np.maximum(raw_tr.std(0), 1e-6)
     geo = TreeGeometry(tree, scale)
     depth = geo.max_depth
@@ -120,9 +115,7 @@ def run_one(seed: int, args) -> dict:
     Xs_te = (raw_te - raw_tr.mean(0)) / scale
 
     records = []
-    for i in rng.choice(np.flatnonzero(preds == y_te), size=args.pairs, replace=False):
-        other = np.flatnonzero(preds != preds[i])
-        j = int(other[np.argmin(np.linalg.norm(Xs_te[other] - Xs_te[i], axis=1))])
+    for i, j in select_pairs(preds, y_te, Xs_te, rng, args.pairs):
         xi, xj, ci, cj = raw_te[i], raw_te[j], int(preds[i]), int(preds[j])
 
         # o teste atual: trocas em direcao a j, na ordem de Δ_f calculada a partir de i
@@ -137,17 +130,19 @@ def run_one(seed: int, args) -> dict:
         mu = S.mean(0)
 
         rec = {"i": int(i), "j": j, "pred_i": ci, "pred_j": cj, "k_swap_j": k_swap, "k_min_j": k_min_j,
-               "k_min_mu": minimal_subset(tree, xi, mu, cj),
-               "mu_is_cj": bool(tree.predict(mu[None].astype(np.float32))[0] == cj), "variants": {}}
+               "mu_is_cj": bool(tree.predict(mu[None].astype(np.float32))[0] == cj)}
         target_tr = raw_tr[preds_tr == cj]
-        for v in VARIANTS:
-            t0 = time.perf_counter()
-            x, changed, valid = counterfactual(tree, geo, xi, mu, S, ci, cj, depth, v, rng)
-            rec["variants"][v] = {
-                "valid": valid, "n_changed": len(changed), "changed": changed,
-                "l1": float(np.abs((x - xi) / scale).sum()),
-                "plaus": float(np.min(np.linalg.norm((target_tr - x) / scale, axis=1))),
-                "seconds": time.perf_counter() - t0}
+        for scope, allowed in (("all", np.arange(len(xi))),) + ((("mutable", mutable),) if IMMUTABLE else ()):
+            res = {"k_min_mu": tree_min_flip(tree, xi, mu, cj, allowed), "variants": {}}
+            for v in VARIANTS:
+                t0 = time.perf_counter()
+                x, changed, valid = counterfactual(tree, geo, xi, mu, S, ci, cj, depth, v, rng, allowed)
+                res["variants"][v] = {
+                    "valid": valid, "n_changed": len(changed), "changed": changed,
+                    "l1": float(np.abs((x - xi) / scale).sum()),
+                    "plaus": float(np.min(np.linalg.norm((target_tr - x) / scale, axis=1))),
+                    "seconds": time.perf_counter() - t0}
+            rec[scope] = res
         records.append(rec)
     return {"seed": seed, "accuracy": float((preds == y_te).mean()), "depth": depth, "k": args.k,
             "pairs": records}
@@ -158,29 +153,35 @@ def write_report(runs: list[dict], args, out: Path) -> None:
         return [fn(r["pairs"]) for r in runs]
 
     L = [f"# Contrafactual sequencial guiado pela geometria — árvore, `{DATASET}`\n",
-         f"{len(runs)} sementes × {args.pairs} pares. Alvo: média dos {args.k} objetos preditos como c_j mais "
-         "próximos de i na Gram conjunta (profundidade máxima). Média ± desvio entre sementes.\n",
-         f"- a média μ já é classificada como c_j em {pm(per_seed(lambda P: np.mean([p['mu_is_cj'] for p in P])))} dos pares",
+         f"{len(runs)} sementes × {args.pairs} pares. Alvo: média dos {args.k} objetos preditos na classe de j "
+         "mais próximos de i na Gram conjunta (profundidade máxima). Média ± desvio entre sementes.\n",
+         f"- a média μ já é classificada na classe de j em {pm(per_seed(lambda P: np.mean([p['mu_is_cj'] for p in P])))} dos pares",
          f"- teste atual (trocas em direção a j, ordem de Δ_f a partir de i): "
          f"{pm(per_seed(lambda P: np.mean([p['k_swap_j'] for p in P])), 2)} trocas; mínimo exato em direção a j "
-         f"{pm(per_seed(lambda P: np.mean([p['k_min_j'] for p in P])), 2)}\n",
-         "| procedimento | válido | atributos alterados | excesso sobre o mínimo | atinge o mínimo | L1 padronizada | "
-         "plausibilidade | ms por par |", "|---|---|---|---|---|---|---|---|"]
-    for v in VARIANTS:
-        def stat(key, P, v=v):
-            return np.mean([p["variants"][v][key] for p in P if p["variants"][v]["valid"]])
-        def excess(P, v=v):
-            ok = [p for p in P if p["variants"][v]["valid"] and p["k_min_mu"] is not None]
-            return np.mean([p["variants"][v]["n_changed"] - p["k_min_mu"] for p in ok])
-        def hits(P, v=v):
-            ok = [p for p in P if p["variants"][v]["valid"] and p["k_min_mu"] is not None]
-            return np.mean([p["variants"][v]["n_changed"] == p["k_min_mu"] for p in ok])
-        L.append(f"| {LABEL[v]} | {pm(per_seed(lambda P: np.mean([p['variants'][v]['valid'] for p in P])))} | "
-                 f"{pm(per_seed(lambda P: stat('n_changed', P)), 2)} | {pm(per_seed(excess), 2)} | {pm(per_seed(hits))} | "
-                 f"{pm(per_seed(lambda P: stat('l1', P)), 2)} | {pm(per_seed(lambda P: stat('plaus', P)), 2)} | "
-                 f"{pm(per_seed(lambda P: stat('seconds', P) * 1e3), 1)} |")
-    L.append(f"| {LABEL['minimal']} | {pm(per_seed(lambda P: np.mean([p['k_min_mu'] is not None for p in P])))} | "
-             f"{pm(per_seed(lambda P: np.mean([p['k_min_mu'] for p in P if p['k_min_mu'] is not None])), 2)} | 0 | 100% | — | — | — |")
+         f"{pm(per_seed(lambda P: np.mean([p['k_min_j'] for p in P if p['k_min_j'] is not None])), 2)}\n"]
+    for scope in [s for s in ("all", "mutable") if s in runs[0]["pairs"][0]]:
+        L += [f"## Escopo: {'todos os atributos' if scope == 'all' else 'só os mutáveis'}\n",
+              "| procedimento | válido | atributos alterados | excesso sobre o mínimo | atinge o mínimo | L1 padronizada | "
+              "plausibilidade | ms por par |", "|---|---|---|---|---|---|---|---|"]
+        for v in VARIANTS:
+            def stat(key, P, v=v):
+                return np.mean([p[scope]["variants"][v][key] for p in P if p[scope]["variants"][v]["valid"]])
+
+            def ok(P, v=v):
+                return [p for p in P if p[scope]["variants"][v]["valid"] and p[scope]["k_min_mu"] is not None]
+
+            def excess(P, v=v):
+                return np.mean([p[scope]["variants"][v]["n_changed"] - p[scope]["k_min_mu"] for p in ok(P)])
+
+            def hits(P, v=v):
+                return np.mean([p[scope]["variants"][v]["n_changed"] == p[scope]["k_min_mu"] for p in ok(P)])
+            L.append(f"| {LABEL[v]} | {pm(per_seed(lambda P: np.mean([p[scope]['variants'][v]['valid'] for p in P])))} | "
+                     f"{pm(per_seed(lambda P: stat('n_changed', P)), 2)} | {pm(per_seed(excess), 2)} | {pm(per_seed(hits))} | "
+                     f"{pm(per_seed(lambda P: stat('l1', P)), 2)} | {pm(per_seed(lambda P: stat('plaus', P)), 2)} | "
+                     f"{pm(per_seed(lambda P: stat('seconds', P) * 1e3), 1)} |")
+        L.append(f"| {LABEL['minimal']} | {pm(per_seed(lambda P: np.mean([p[scope]['k_min_mu'] is not None for p in P])))} | "
+                 f"{pm(per_seed(lambda P: np.mean([p[scope]['k_min_mu'] for p in P if p[scope]['k_min_mu'] is not None])), 2)} "
+                 "| 0 | 100% | — | — | — |\n")
     (out / "tables.md").write_text("\n".join(L) + "\n", encoding="utf-8")
 
 
@@ -189,9 +190,8 @@ def main() -> None:
     ap.add_argument("--seeds", type=int, default=5)
     ap.add_argument("--pairs", type=int, default=100)
     ap.add_argument("--k", type=int, default=5, help="objetos da outra classe cuja media e o alvo")
-    ap.add_argument("--min-leaf", type=int, default=3)
-    ap.add_argument("--out", default=("outputs/tree_counterfactual" if DATASET == "letter"
-                                      else f"outputs/tree_counterfactual_{DATASET}"))
+    ap.add_argument("--min-leaf", type=int, default=MIN_LEAF, help="o de `src.case.MIN_LEAF`, escolhido pela validacao")
+    ap.add_argument("--out", default=f"outputs/tree_counterfactual_{DATASET}")
     args = ap.parse_args()
     out = Path(args.out)
     (out / "runs").mkdir(parents=True, exist_ok=True)
@@ -199,15 +199,16 @@ def main() -> None:
     for seed in range(args.seeds):
         path = out / "runs" / f"seed{seed}.json"
         if path.exists():
-            runs.append(json.loads(path.read_text()))
+            runs.append(json.loads(path.read_text(encoding="utf-8")))
             continue
         t0 = time.perf_counter()
         r = run_one(seed, args)
-        path.write_text(json.dumps(r, ensure_ascii=False))
+        path.write_text(json.dumps(r, ensure_ascii=False), encoding="utf-8")
         runs.append(r)
-        ch = {v: np.mean([p["variants"][v]["n_changed"] for p in r["pairs"] if p["variants"][v]["valid"]]) for v in VARIANTS}
+        ch = {v: np.mean([p["all"]["variants"][v]["n_changed"] for p in r["pairs"] if p["all"]["variants"][v]["valid"]])
+              for v in VARIANTS}
         print(f"semente {seed} ({time.perf_counter() - t0:.0f} s): mínimo "
-              f"{np.mean([p['k_min_mu'] for p in r['pairs'] if p['k_min_mu'] is not None]):.2f} | "
+              f"{np.mean([p['all']['k_min_mu'] for p in r['pairs'] if p['all']['k_min_mu'] is not None]):.2f} | "
               + " ".join(f"{v} {c:.2f}" for v, c in ch.items()), flush=True)
     write_report(runs, args, out)
     print(f"pronto: {out}/")
