@@ -50,7 +50,7 @@ com $f$ aplicada a cada autovalor e $f(\lambda)\geq 0$ para $\lambda\geq 0$, con
 
 \subsubsection*{Catálogo de transformações e propriedades geométricas}
 
-Propriedades adicionais, como invariância a translações ou a reescalonamentos globais ou individuais, não decorrem da admissibilidade e devem ser verificadas para cada transformação. A Tabela \ref{tab:T_catalog} apresenta as transformações relevantes para este trabalho, em que $H = I - \frac{1}{n}\mathbf{1}\mathbf{1}^{\top}$ é a matriz de centramento e $D = \operatorname{diag}(\widetilde{G}_{11},\dots,\widetilde{G}_{nn})$.
+Propriedades adicionais, como invariância a translações ou a reescalonamentos globais ou individuais, não decorrem da admissibilidade e devem ser verificadas para cada transformação. A Tabela \ref{tab:T_catalog} apresenta as transformações utilizadas neste trabalho, em que $H = I - \frac{1}{n}\mathbf{1}\mathbf{1}^{\top}$ é a matriz de centramento e $D = \operatorname{diag}(\widetilde{G}_{11},\dots,\widetilde{G}_{nn})$.
 
 \begin{table}[pos=ht]
 \scriptsize
@@ -69,15 +69,6 @@ Propriedades adicionais, como invariância a translações ou a reescalonamentos
 \textbf{Estrutura enfatizada}
 \\
 \hline
-
-$T_{\mathrm{id}}$
-&
-$\widetilde{\mathbf{G}}$
-&
-Nenhuma invariância geométrica adicional
-&
-Similaridades originais, preservando centro, escala e magnitudes
-\\
 
 $T_c$
 &
@@ -99,28 +90,6 @@ Reescalonamento global positivo
 Distribuição relativa da energia entre os modos espectrais
 \\
 
-$T_F$
-&
-$\displaystyle
-\frac{\widetilde{\mathbf{G}}}
-{\|\widetilde{\mathbf{G}}\|_F}$
-&
-Reescalonamento global positivo
-&
-Estrutura relativa das entradas medida pela norma de Frobenius
-\\
-
-$T_{\lambda}$
-&
-$\displaystyle
-\frac{\widetilde{\mathbf{G}}}
-{\lambda_{\max}(\widetilde{\mathbf{G}})}$
-&
-Reescalonamento global positivo
-&
-Normalização pelo modo espectral dominante
-\\
-
 $T_a$
 &
 $\displaystyle
@@ -131,15 +100,6 @@ D^{-1/2}$
 Reescalonamentos positivos individuais das representações
 &
 Similaridade angular, com descarte das magnitudes individuais
-\\
-
-$T_w$
-&
-$V_+V_+^{\top}$
-&
-Transformações que preservam a imagem de $\widetilde{\mathbf{G}}$
-&
-Subespaço espectral suportado pela matriz, sem as magnitudes dos autovalores
 \\
 
 $T_{\mathrm{tr}}\circ T_c$
@@ -163,7 +123,7 @@ Geometria centrada expressa em escala relativa
 \end{tabular}
 \end{table}
 
-A transformação angular $T_a$ exige $\widetilde{G}_{ii}>0$ e tem entradas $\widetilde{G}_{ij}/\sqrt{\widetilde{G}_{ii}\widetilde{G}_{jj}}$, isto é, normaliza a representação de cada objeto e retém apenas a similaridade angular. Em $T_w$, as colunas de $V_+$ são os autovetores associados aos autovalores estritamente positivos de $\widetilde{\mathbf{G}}$, de modo que $T_w(\widetilde{\mathbf{G}})$ é o projetor ortogonal sobre $\operatorname{Im}(\widetilde{\mathbf{G}})$, que preserva o subespaço suportado pela matriz e descarta as magnitudes dos autovalores. As normalizações $T_{\mathrm{tr}}$, $T_F$ e $T_\lambda$ são todas invariantes a $\widetilde{\mathbf{G}} \mapsto \alpha\widetilde{\mathbf{G}}$, $\alpha>0$, mas fixam a escala pela energia espectral total, pela norma de Frobenius e pelo maior autovalor, respectivamente, e não produzem, em geral, a mesma geometria.
+A transformação angular $T_a$ exige $\widetilde{G}_{ii}>0$ e tem entradas $\widetilde{G}_{ij}/\sqrt{\widetilde{G}_{ii}\widetilde{G}_{jj}}$, isto é, normaliza a representação de cada objeto e retém apenas a similaridade angular.
 
 \begin{proposition}[Efeito de $T_c$ e $T_{\mathrm{tr}}$ sobre a geometria de distâncias]\label{prop:invariancia_distancias}
 Seja $\mathbf{G}\in\mathbb{S}_+^n$ e sejam $d_{\mathbf{G}}^2(i,j)=G_{ii}+G_{jj}-2G_{ij}$ as distâncias ao quadrado induzidas (Seção \ref{sec:representation_geometry}). Então \textnormal{(i)} $d^2_{T_c(\mathbf{G})}(i,j)=d^2_{\mathbf{G}}(i,j)$ para todo $i,j$, e \textnormal{(ii)} $d^2_{T_{\mathrm{tr}}(\mathbf{G})}(i,j)=d^2_{\mathbf{G}}(i,j)/\operatorname{tr}(\mathbf{G})$. Em particular, as vizinhanças $N_k$, a ordenação dos vizinhos e qualquer leitura que dependa apenas da ordem das distâncias são invariantes a $T_c$ e a $T_{\mathrm{tr}}$ aplicadas à Gram conjunta.
