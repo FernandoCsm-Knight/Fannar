@@ -1,0 +1,99 @@
+/* The palette of fannar.fernandocsdm.com (Nord, light version) on Material for MkDocs.
+   Snow Storm for surfaces, Polar Night for text, Frost as the brand colour; the dark scheme
+   uses Polar Night for surfaces. */
+
+:root {
+  --fn-brand: #4f6f97;
+  --fn-brand-ink: #435f83;
+  --fn-brand-soft: #e8eef5;
+  --fn-frost: #5e81ac;
+  --fn-ink: #2e3440;
+  --fn-ink-2: #4c566a;
+  --fn-line: #e1e6ee;
+  --fn-surface: #f5f7fa;
+  --fn-floor: #8a6a26;
+  --fn-floor-soft: #fbf6ea;
+}
+
+[data-md-color-scheme="default"] {
+  --md-primary-fg-color: var(--fn-brand);
+  --md-primary-fg-color--light: var(--fn-frost);
+  --md-primary-fg-color--dark: var(--fn-brand-ink);
+  --md-accent-fg-color: var(--fn-frost);
+  --md-accent-fg-color--transparent: rgba(94, 129, 172, .1);
+  --md-default-fg-color: var(--fn-ink);
+  --md-default-fg-color--light: var(--fn-ink-2);
+  --md-default-bg-color: #ffffff;
+  --md-typeset-a-color: var(--fn-brand-ink);
+  --md-code-bg-color: var(--fn-surface);
+  --md-code-fg-color: var(--fn-ink);
+  --md-footer-bg-color: #2e3440;
+  --md-footer-bg-color--dark: #272c36;
+}
+
+[data-md-color-scheme="slate"] {
+  --md-hue: 220;
+  --md-primary-fg-color: #81a1c1;
+  --md-primary-fg-color--light: #88c0d0;
+  --md-primary-fg-color--dark: #5e81ac;
+  --md-accent-fg-color: #88c0d0;
+  --md-default-bg-color: #2e3440;
+  --md-default-fg-color: #e5e9f0;
+  --md-default-fg-color--light: #d8dee9;
+  --md-code-bg-color: #3b4252;
+  --md-code-fg-color: #e5e9f0;
+  --md-typeset-a-color: #88c0d0;
+  --md-footer-bg-color: #272c36;
+  --md-footer-bg-color--dark: #222730;
+}
+
+/* Light header, as on the services site: white surface, ink text, a thin line. */
+[data-md-color-scheme="default"] .md-header,
+[data-md-color-scheme="default"] .md-tabs {
+  background-color: #ffffff;
+  color: var(--fn-ink);
+}
+[data-md-color-scheme="default"] .md-header { box-shadow: 0 1px 0 var(--fn-line); }
+[data-md-color-scheme="default"] .md-header--shadow { box-shadow: 0 1px 0 var(--fn-line), 0 8px 24px rgba(46, 52, 64, .06); }
+[data-md-color-scheme="default"] .md-tabs { border-bottom: 1px solid var(--fn-line); }
+[data-md-color-scheme="default"] .md-tabs__link--active,
+[data-md-color-scheme="default"] .md-tabs__link:hover { color: var(--fn-brand-ink); }
+[data-md-color-scheme="default"] .md-search__form { background-color: var(--fn-surface); }
+[data-md-color-scheme="default"] .md-search__form:hover { background-color: #eceff4; }
+[data-md-color-scheme="default"] .md-search__input::placeholder,
+[data-md-color-scheme="default"] .md-search__icon { color: var(--fn-ink-2); }
+[data-md-color-scheme="slate"] .md-header,
+[data-md-color-scheme="slate"] .md-tabs { background-color: #3b4252; }
+
+.md-header__topic:first-child { font-weight: 700; letter-spacing: -.01em; }
+
+.md-typeset h1 { font-weight: 700; letter-spacing: -.02em; color: var(--md-default-fg-color); }
+.md-typeset h2 { font-weight: 650; letter-spacing: -.01em; }
+.md-typeset .lead { font-size: 1.05rem; color: var(--md-default-fg-color--light); }
+
+/* "floor" admonition: the Aurora yellow that the services site uses for the floor. */
+.md-typeset .admonition.floor,
+.md-typeset details.floor { border-color: #ebcb8b; }
+.md-typeset .floor > .admonition-title,
+.md-typeset .floor > summary { background-color: var(--fn-floor-soft); }
+.md-typeset .floor > .admonition-title::before,
+.md-typeset .floor > summary::before {
+  background-color: var(--fn-floor);
+  -webkit-mask-image: var(--md-admonition-icon--warning);
+  mask-image: var(--md-admonition-icon--warning);
+}
+[data-md-color-scheme="slate"] .md-typeset .floor > .admonition-title,
+[data-md-color-scheme="slate"] .md-typeset .floor > summary { background-color: rgba(235, 203, 139, .12); }
+
+/* Figures from the case studies. */
+.md-typeset figure img { border-radius: 10px; border: 1px solid var(--fn-line); }
+[data-md-color-scheme="slate"] .md-typeset figure img { border-color: #4c566a; }
+.md-typeset figcaption { max-width: 46rem; color: var(--md-default-fg-color--light); }
+
+/* Cards on the overview page. */
+.md-typeset .grid.cards > ul > li { border-radius: 12px; }
+
+/* API reference: a little more air between members. */
+.doc-object .doc-object { margin-top: 1.4rem; }
+.md-typeset .doc-signature { font-size: .8rem; }
+.katex-display { overflow-x: auto; overflow-y: hidden; padding: .2rem 0; }

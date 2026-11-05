@@ -1,0 +1,151 @@
+# Documentation site, published at https://fannar.fernandocsdm.com/docs/
+#
+#   pip install -e ".[docs]"
+#   mkdocs serve                      # local preview at http://127.0.0.1:8000/docs/
+#   bash scripts/publish_docs.sh      # build and copy into ../Portfolio/public/fannar/docs
+
+site_name: Fannar
+site_description: Representation spaces of trained models from Gram matrices of several sources.
+site_url: https://fannar.fernandocsdm.com/docs/
+site_author: Fernando C. S. Dal' Maria
+repo_url: https://github.com/FernandoCsm-Knight/Fannar
+repo_name: FernandoCsm-Knight/Fannar
+edit_uri: edit/main/docs/lib/
+copyright: >-
+  © 2026 Fernando C. S. Dal' Maria, Cristiane N. Nobre and Pedro Belchior ·
+  <a href="https://creativecommons.org/licenses/by-nc/4.0/">CC BY-NC 4.0</a>
+
+docs_dir: docs/lib
+site_dir: build/docs
+
+theme:
+  name: material
+  language: en
+  logo: assets/favicon.svg
+  favicon: assets/favicon.svg
+  font:
+    text: Inter
+    code: IBM Plex Mono
+  palette:
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: Switch to system preference
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - navigation.indexes
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.action.edit
+
+extra_css:
+  - assets/katex/katex.min.css
+  - assets/extra.css
+
+extra_javascript:
+  - assets/katex/katex.min.js
+  - assets/katex/auto-render.min.js
+  - assets/katex.js
+
+extra:
+  generator: false
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/FernandoCsm-Knight/Fannar
+      name: Source code
+    - icon: material/snowflake
+      link: https://fannar.fernandocsdm.com/
+      name: Fannar interpretability services
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            docstring_style: numpy
+            docstring_section_style: table
+            extensions:
+              - scripts/griffe_rst_roles.py
+            show_root_heading: true
+            show_root_full_path: false
+            show_source: true
+            show_signature_annotations: true
+            separate_signature: true
+            line_length: 88
+            signature_crossrefs: true
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            members_order: source
+            show_if_no_docstring: true
+            filters: ["!^_"]
+            merge_init_into_class: true
+            heading_level: 2
+
+nav:
+  - Guide:
+      - Overview: index.md
+      - Installation: installation.md
+      - Quick start: quickstart.md
+      - The method: concepts.md
+      - Guides:
+          - Your own Gram matrices: guides/custom-gram.md
+          - Trees and other models: guides/other-models.md
+          - The representation space: guides/gram-space.md
+          - Readings and reports: guides/readings.md
+          - Explanations: guides/explanations.md
+          - Cost: guides/cost.md
+  - API reference:
+      - reference/index.md
+      - Interpreter: reference/interpreter.md
+      - KernelPipeline: reference/pipeline.md
+      - GramSpace: reference/space.md
+      - Kernels: reference/kernels.md
+      - Transforms: reference/transforms.md
+      - Sources: reference/sources.md
+      - Explanations: reference/explanations.md
+      - Readings: reference/readings.md
+      - Report: reference/report.md
+      - Plots: reference/plots.md
+  - Fannar services: https://fannar.fernandocsdm.com/
