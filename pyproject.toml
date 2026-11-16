@@ -33,6 +33,7 @@ sklearn = ["scikit-learn>=1.2"]
 pandas = ["pandas>=1.5"]
 all = ["torch>=2.0", "scikit-learn>=1.2", "pandas>=1.5"]
 test = ["pytest>=7", "scikit-learn>=1.2", "pandas>=1.5"]
+docs = ["mkdocs-material>=9.5", "mkdocstrings[python]>=0.26", "ruff"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

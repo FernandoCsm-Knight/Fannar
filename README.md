@@ -9,6 +9,8 @@ pelo produto de Hadamard e a geometria e a energia espectral da matriz resultant
 **Fannar** é o nome do método, e esta biblioteca é a sua implementação, a do artigo *Construção de Espaços via Tensores de Similaridade em
 Espaços de Hilbert com Núcleo Reprodutor: Um Método de Interpretabilidade Mecanicista*.
 
+Documentação (em inglês): **[fannar.fernandocsdm.com/docs](https://fannar.fernandocsdm.com/docs/)**.
+
 ```bash
 pip install fannar               # núcleo: numpy + matplotlib
 pip install "fannar[all]"        # + PyTorch, scikit-learn e pandas
@@ -203,6 +205,20 @@ uma passagem direta e uma reversa sobre `F + 2` linhas, linear no número de atr
 ```bash
 pip install -e ".[test]" && pytest
 ```
+
+## Documentação
+
+O site de documentação fica em `docs/lib/` (Markdown, MkDocs Material) e a referência da
+API sai das docstrings. Ele é publicado em `fannar.fernandocsdm.com/docs` pelo projeto do
+portfólio, que serve os arquivos estáticos:
+
+```bash
+pip install -e ".[docs]"
+mkdocs serve                        # prévia em http://127.0.0.1:8000/docs/
+bash scripts/publish_docs.sh        # build e cópia para ../Portfolio/public/fannar/docs
+```
+
+Depois é só fazer commit e deploy do portfólio.
 
 ## Licença
 
