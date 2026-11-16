@@ -33,7 +33,12 @@ from .space import GramSpace
 from .transforms import (Transform, angular, center, frobenius_normalize, identity, max_eig_normalize,
                          psd_project, shift, spectral, trace_normalize, whiten)
 
-__version__ = "0.3.0"
+# A versão vem do pyproject.toml (metadados do pacote instalado): um só lugar para mudar.
+try:
+    from importlib.metadata import PackageNotFoundError as _NotFound, version as _version
+    __version__ = _version("fannar")
+except _NotFound:  # rodando do código-fonte sem instalar
+    __version__ = "0.3.1"
 
 __all__ = [
     "Interpreter", "GramSpace", "KernelPipeline", "Component", "Report", "PairExplanation", "ErrorExplanation",

@@ -18,7 +18,7 @@ pip install -e ".[test]"         # a partir deste diretório, para desenvolver
 ## O que ele mostra
 
 <p align="center">
-  <img src="docs/readme/visao_atalho.webp" alt="A mesma foto de gato com uma marca no canto, vista por um modelo limpo e por um modelo que aprendeu um atalho, segundo Fannar, SHAP e LIME" width="100%">
+  <img src="https://raw.githubusercontent.com/FernandoCsm-Knight/Fannar/main/docs/readme/visao_atalho.webp" alt="A mesma foto de gato com uma marca no canto, vista por um modelo limpo e por um modelo que aprendeu um atalho, segundo Fannar, SHAP e LIME" width="100%">
 </p>
 
 Uma ResNet-18 treinada com uma pequena marca em 95% das fotos de cachorro aprende o atalho:
@@ -27,16 +27,16 @@ Fannar cai sobre a marca, que ocupa 2% da imagem; no modelo limpo, 91% fica sobr
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/readme/visao_energias.webp" alt="Energia retida e energia ortogonal por posição nos dois modelos de visão"></td>
-    <td width="50%"><img src="docs/readme/churn_erros_confiantes.webp" alt="Erros de um modelo de churn cometidos com mais de 90% de confiança e quantos deles a geometria sinaliza"></td>
+    <td width="50%"><img src="https://raw.githubusercontent.com/FernandoCsm-Knight/Fannar/main/docs/readme/visao_energias.webp" alt="Energia retida e energia ortogonal por posição nos dois modelos de visão"></td>
+    <td width="50%"><img src="https://raw.githubusercontent.com/FernandoCsm-Knight/Fannar/main/docs/readme/churn_erros_confiantes.webp" alt="Erros de um modelo de churn cometidos com mais de 90% de confiança e quantos deles a geometria sinaliza"></td>
   </tr>
   <tr>
     <td><b>Energia retida × ortogonal.</b> O atalho ocupa os modos dominantes, mas o gato continua representado fora deles: 68% da energia ortogonal fica no animal.</td>
     <td><b>Erros com convicção.</b> 113 dos 136 erros de uma rede de churn vêm com mais de 90% de confiança; a margem geométrica sinaliza 55 deles.</td>
   </tr>
   <tr>
-    <td><img src="docs/readme/credito_tres_metodos.webp" alt="Os atributos que mais separam um cliente recusado de um aprovado segundo Fannar, SHAP e LIME"></td>
-    <td><img src="docs/readme/texto_camadas.webp" alt="Mensagens de clientes de um banco separadas por intenção, bloco a bloco de um DistilBERT"></td>
+    <td><img src="https://raw.githubusercontent.com/FernandoCsm-Knight/Fannar/main/docs/readme/credito_tres_metodos.webp" alt="Os atributos que mais separam um cliente recusado de um aprovado segundo Fannar, SHAP e LIME"></td>
+    <td><img src="https://raw.githubusercontent.com/FernandoCsm-Knight/Fannar/main/docs/readme/texto_camadas.webp" alt="Mensagens de clientes de um banco separadas por intenção, bloco a bloco de um DistilBERT"></td>
   </tr>
   <tr>
     <td><b>Explicação de pares (XGBoost).</b> O que separa um cliente recusado de um aprovado parecido; onde Fannar, SHAP e LIME concordam, a conclusão fica mais firme.</td>
@@ -45,7 +45,7 @@ Fannar cai sobre a marca, que ocupa 2% da imagem; no modelo limpo, 91% fica sobr
 </table>
 
 <p align="center">
-  <img src="docs/readme/series_falha.webp" alt="Sinal de vibração com os impactos de uma falha de rolamento e onde cada método aponta no tempo" width="100%">
+  <img src="https://raw.githubusercontent.com/FernandoCsm-Knight/Fannar/main/docs/readme/series_falha.webp" alt="Sinal de vibração com os impactos de uma falha de rolamento e onde cada método aponta no tempo" width="100%">
 </p>
 
 Em séries temporais, a energia por instante de uma CNN 1D se concentra nos impactos de uma falha de
@@ -211,7 +211,7 @@ This work is licensed under a
 
 [![CC BY-NC 4.0][cc-by-nc-image]][cc-by-nc]
 
-O texto completo está em [`LICENCE`](LICENCE). Para uso comercial do método, há o serviço de
+O texto completo está em [`LICENCE`](https://github.com/FernandoCsm-Knight/Fannar/blob/main/LICENCE). Para uso comercial do método, há o serviço de
 interpretabilidade em [fannar.fernandocsdm.com](https://fannar.fernandocsdm.com).
 
 [cc-by-nc]: https://creativecommons.org/licenses/by-nc/4.0/

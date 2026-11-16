@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=64", "wheel"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,21 +7,25 @@ name = "fannar"
 version = "0.3.1"
 description = "Representation spaces of trained models from Gram matrices of several sources (kernel-transformation pipeline, Hadamard composition, geometry and spectral energy)."
 readme = "README.md"
-license = { text = "CC-BY-NC-4.0" }
+license = "CC-BY-NC-4.0"
+license-files = ["LICENCE"]
 requires-python = ">=3.10"
 authors = [
   { name = "Fernando C. S. Dal' Maria" },
   { name = "Cristiane N. Nobre" },
   { name = "Pedro Belchior" },
 ]
-keywords = ["interpretability", "explainability", "kernel methods", "Pineapple", "RKHS", "Gram matrix", "representation geometry"]
+keywords = ["interpretability", "explainability", "kernel methods", "RKHS", "Gram matrix", "representation geometry"]
 classifiers = [
   "Programming Language :: Python :: 3",
-  "License :: Free for non-commercial use",
   "Intended Audience :: Science/Research",
   "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = ["numpy>=1.23", "matplotlib>=3.6"]
+
+[project.urls]
+Homepage = "https://fannar.fernandocsdm.com"
+Repository = "https://github.com/FernandoCsm-Knight/Fannar"
 
 [project.optional-dependencies]
 torch = ["torch>=2.0"]
