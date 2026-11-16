@@ -13,6 +13,13 @@ Quick start::
     interp.plot_report(report)
     interp.explain_pair(0).top(5)
 
+By kind of data (thin layers over :class:`Interpreter` with sensible defaults)::
+
+    fa.tabular.TabularInterpreter(model, df_test, y_test)        # PyTorch model on tabular rows
+    fa.image.ImageInterpreter(cnn, loader, y_test, layers=[...])  # CNN / ViT, (N, C, H, W) outputs
+    fa.text.TextInterpreter(fa.text.wrap_hf(hf_model), ids, y)    # transformers over tokens
+    fa.tree.TreeInterpreter(tree, df_test, y_test, X_train=df_train)
+
 Building blocks::
 
     pipe  = fa.KernelPipeline({"A": fa.Component("linear"), "B": fa.Component(my_kernel)})
@@ -38,7 +45,23 @@ try:
     from importlib.metadata import PackageNotFoundError as _NotFound, version as _version
     __version__ = _version("fannar")
 except _NotFound:  # rodando do código-fonte sem instalar
-    __version__ = "0.3.1"
+    __version__ = "0.4.0"
+
+# Módulos por tipo de dado, carregados sob demanda: `import fannar` continua leve e sem torch.
+_DOMAINS = ("tabular", "image", "text", "tree")
+
+
+def __getattr__(name):
+    if name in _DOMAINS:
+        import importlib
+        module = importlib.import_module(f".{name}", __name__)
+        globals()[name] = module
+        return module
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def __dir__():
+    return sorted(set(globals()) | set(_DOMAINS))
 
 __all__ = [
     "Interpreter", "GramSpace", "KernelPipeline", "Component", "Report", "PairExplanation", "ErrorExplanation",
@@ -48,4 +71,5 @@ __all__ = [
     "angular", "shift", "whiten", "spectral", "psd_project",
     "paper_pipeline", "single_source", "positions_pipeline", "PRESETS", "evaluate",
     "kernels", "transforms", "readings", "__version__",
+    "tabular", "image", "text", "tree",
 ]

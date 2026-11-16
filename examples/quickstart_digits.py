@@ -19,6 +19,7 @@ from sklearn.datasets import load_digits  # noqa: E402
 from sklearn.model_selection import train_test_split  # noqa: E402
 
 import fannar as fa  # noqa: E402
+from fannar.tabular import TabularInterpreter  # noqa: E402
 
 out = Path("fannar_digits")
 out.mkdir(exist_ok=True)
@@ -44,8 +45,8 @@ for epoch in range(60):
         opt.step()
 model.eval()
 
-interp = fa.Interpreter(model, X_te, y_te, layers=["block1", "block2", "block3"], reference_model=initial,
-                        feature_names=[f"pixel{t}" for t in range(64)])
+interp = TabularInterpreter(model, X_te, y_te, layers=["block1", "block2", "block3"], reference_model=initial,
+                            feature_names=[f"pixel{t}" for t in range(64)])
 report = interp.evaluate()
 print(f"acurácia no teste: {report.meta['accuracy']:.3f}")
 print(report.to_markdown())

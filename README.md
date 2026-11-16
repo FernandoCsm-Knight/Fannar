@@ -2,233 +2,271 @@
 
 [![CC BY-NC 4.0][cc-by-nc-shield]][cc-by-nc]
 
-Espaços de representação de modelos treinados a partir de matrizes de Gram de várias fontes de
-informação: um *kernel* positivamente definido por fonte, transformações admissíveis, composição
-pelo produto de Hadamard e a geometria e a energia espectral da matriz resultante.
+Representation spaces of trained models from Gram matrices of several sources of information: one
+positive-definite *kernel* per source, admissible transformations, Hadamard composition, and the
+geometry and spectral energy of the resulting matrix.
 
-**Fannar** é o nome do método, e esta biblioteca é a sua implementação, a do artigo *Construção de Espaços via Tensores de Similaridade em
-Espaços de Hilbert com Núcleo Reprodutor: Um Método de Interpretabilidade Mecanicista*.
+**Fannar** is the name of the method, and this library is its implementation. Both are described
+in the paper *Building Spaces via Similarity Tensors in Reproducing Kernel Hilbert Spaces: A
+Mechanistic Interpretability Method*.
 
-Documentação (em inglês): **[fannar.fernandocsdm.com/docs](https://fannar.fernandocsdm.com/docs/)**.
+Documentation: **[fannar.fernandocsdm.com/docs](https://fannar.fernandocsdm.com/docs/)**.
 
 ```bash
-pip install fannar               # núcleo: numpy + matplotlib
-pip install "fannar[all]"        # + PyTorch, scikit-learn e pandas
-pip install -e ".[test]"         # a partir deste diretório, para desenvolver
+pip install fannar               # core: numpy + matplotlib
+pip install "fannar[all]"        # + PyTorch, scikit-learn and pandas
+pip install -e ".[test]"         # from this directory, for development
 ```
 
-## O que ele mostra
+## What it shows
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/FernandoCsm-Knight/Fannar/main/docs/readme/visao_atalho.webp" alt="A mesma foto de gato com uma marca no canto, vista por um modelo limpo e por um modelo que aprendeu um atalho, segundo Fannar, SHAP e LIME" width="100%">
+  <img src="https://raw.githubusercontent.com/FernandoCsm-Knight/Fannar/main/docs/lib/assets/images/visao_atalho.webp" alt="The same cat photo with a small mark in the corner, seen by a clean model and by a model that learned a shortcut, according to Fannar, SHAP and LIME" width="100%">
 </p>
 
-Uma ResNet-18 treinada com uma pequena marca em 95% das fotos de cachorro aprende o atalho:
-chama de cachorro 40% dos gatos com a marca. No modelo com atalho, metade do mapa de energia do
-Fannar cai sobre a marca, que ocupa 2% da imagem; no modelo limpo, 91% fica sobre o animal.
+A ResNet-18 trained with a small mark on 95% of the dog photos learns the shortcut: it calls 40%
+of the marked cats dogs. In that model, half of Fannar's energy map falls on the mark, which
+covers 2% of the image. In the clean model, 91% falls on the animal.
 
 <table>
   <tr>
-    <td width="50%"><img src="https://raw.githubusercontent.com/FernandoCsm-Knight/Fannar/main/docs/readme/visao_energias.webp" alt="Energia retida e energia ortogonal por posição nos dois modelos de visão"></td>
-    <td width="50%"><img src="https://raw.githubusercontent.com/FernandoCsm-Knight/Fannar/main/docs/readme/churn_erros_confiantes.webp" alt="Erros de um modelo de churn cometidos com mais de 90% de confiança e quantos deles a geometria sinaliza"></td>
+    <td width="50%"><img src="https://raw.githubusercontent.com/FernandoCsm-Knight/Fannar/main/docs/lib/assets/images/visao_energias.webp" alt="Retained and orthogonal energy per position in the two vision models"></td>
+    <td width="50%"><img src="https://raw.githubusercontent.com/FernandoCsm-Knight/Fannar/main/docs/lib/assets/images/churn_erros_confiantes.webp" alt="Errors of a churn model made with more than 90% confidence, and how many of them the geometry flags"></td>
   </tr>
   <tr>
-    <td><b>Energia retida × ortogonal.</b> O atalho ocupa os modos dominantes, mas o gato continua representado fora deles: 68% da energia ortogonal fica no animal.</td>
-    <td><b>Erros com convicção.</b> 113 dos 136 erros de uma rede de churn vêm com mais de 90% de confiança; a margem geométrica sinaliza 55 deles.</td>
+    <td><b>Retained vs. orthogonal energy.</b> The shortcut takes the dominant modes, but the cat is still represented outside them: 68% of the orthogonal energy sits on the animal.</td>
+    <td><b>Confident errors.</b> 113 of the 136 errors of a churn network come with more than 90% confidence. The geometric margin flags 55 of them.</td>
   </tr>
   <tr>
-    <td><img src="https://raw.githubusercontent.com/FernandoCsm-Knight/Fannar/main/docs/readme/credito_tres_metodos.webp" alt="Os atributos que mais separam um cliente recusado de um aprovado segundo Fannar, SHAP e LIME"></td>
-    <td><img src="https://raw.githubusercontent.com/FernandoCsm-Knight/Fannar/main/docs/readme/texto_camadas.webp" alt="Mensagens de clientes de um banco separadas por intenção, bloco a bloco de um DistilBERT"></td>
+    <td><img src="https://raw.githubusercontent.com/FernandoCsm-Knight/Fannar/main/docs/lib/assets/images/credito_tres_metodos.webp" alt="The features that most separate a rejected applicant from an approved one according to Fannar, SHAP and LIME"></td>
+    <td><img src="https://raw.githubusercontent.com/FernandoCsm-Knight/Fannar/main/docs/lib/assets/images/texto_camadas.webp" alt="Bank customer messages separating by intent, block by block of a DistilBERT"></td>
   </tr>
   <tr>
-    <td><b>Explicação de pares (XGBoost).</b> O que separa um cliente recusado de um aprovado parecido; onde Fannar, SHAP e LIME concordam, a conclusão fica mais firme.</td>
-    <td><b>Transformers.</b> As intenções de clientes se separando bloco a bloco de um DistilBERT ajustado, contra o mesmo modelo antes do ajuste fino.</td>
+    <td><b>Pair explanations (XGBoost).</b> What separates a rejected applicant from a similar approved one. Where Fannar, SHAP and LIME agree, the conclusion is firmer.</td>
+    <td><b>Transformers.</b> Customer intents separating block by block in a fine-tuned DistilBERT, against the same model before fine-tuning.</td>
   </tr>
 </table>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/FernandoCsm-Knight/Fannar/main/docs/readme/series_falha.webp" alt="Sinal de vibração com os impactos de uma falha de rolamento e onde cada método aponta no tempo" width="100%">
+  <img src="https://raw.githubusercontent.com/FernandoCsm-Knight/Fannar/main/docs/lib/assets/images/series_falha.webp" alt="Vibration signal with the impacts of a bearing fault, and where each method points in time" width="100%">
 </p>
 
-Em séries temporais, a energia por instante de uma CNN 1D se concentra nos impactos de uma falha de
-rolamento: 66% do mapa cai sobre eles, que ocupam 15% do tempo.
+In time series, the per-instant energy of a 1D CNN concentrates on the impacts of a bearing fault:
+66% of the map falls on them, and they cover 15% of the time.
 
-> Estes exemplos vêm de modelos treinados para ilustrar o método, com uma rodada cada; a avaliação
-> sistemática está no artigo. Mais casos e o serviço de interpretabilidade em
+> These examples come from models trained to illustrate the method, one run each. The systematic
+> evaluation is in the paper. More case studies, and the interpretability service, at
 > [fannar.fernandocsdm.com](https://fannar.fernandocsdm.com).
 
-## A ideia em uma linha
+## The idea in one line
 
 ```
 G = T( T_1(K_1) ∘ T_2(K_2) ∘ … ∘ T_d(K_d) )
 ```
 
-`K_l` é a matriz de Gram bruta da fonte `l` (de um *kernel* ou fornecida por você), `T_l` a
-transformação da componente, `∘` o produto de Hadamard e `T` a transformação final. Pelo teorema
-de Schur, `G` é semidefinida positiva para qualquer escolha, e por isso admite uma geometria
-(distâncias, vizinhanças, conjuntos de nível) e uma decomposição espectral de energia.
+`K_l` is the raw Gram matrix of source `l` (from a *kernel*, or one you supply), `T_l` the
+component transform, `∘` the Hadamard product and `T` the final transform. By the Schur product
+theorem, `G` is positive semidefinite for any such choice. It therefore defines a geometry
+(distances, neighbourhoods, level sets) and a spectral decomposition of energy.
 
-A biblioteca separa, como o artigo, duas coisas:
+The library keeps two things apart, as the paper does:
 
-* **o método** — a construção acima e as leituras sobre `G` (`KernelPipeline`, `GramSpace`);
-* **a instanciação** — quais objetos, quais fontes, quais *kernels* e transformações
-  (`TorchSources`, `TreeSources`, ou uma função sua).
+* **the method**: the construction above and the readings on `G` (`KernelPipeline`, `GramSpace`);
+* **the instantiation**: which objects, which sources, which *kernels* and transformations
+  (`TorchSources`, `TreeSources`, or a function of yours).
 
-## Início rápido: um modelo PyTorch
+## Quick start: a PyTorch model
 
 ```python
 import copy
 import fannar as fa
 
-initial = copy.deepcopy(model)        # guarde antes de treinar: é o piso das leituras
-# ... treine `model` ...
+initial = copy.deepcopy(model)        # keep it before training: it is the floor of the readings
+# ... train `model` ...
 
 interp = fa.Interpreter(
-    model, X_test, y_test,            # o modelo treinado e as amostras a interpretar
-    layers=["layer1", "layer2", "layer3"],   # nomes de model.named_modules()
-    reference_model=initial,          # opcional: piso (a mesma rede na inicialização)
-    feature_names=names,              # opcional: para as explicações de pares
+    model, X_test, y_test,            # the trained model and the objects to interpret
+    layers=["layer1", "layer2", "layer3"],   # names from model.named_modules()
+    reference_model=initial,          # optional: the floor (the same network at initialisation)
+    feature_names=names,              # optional: for the pair explanations
 )
 
-report = interp.evaluate()            # leituras por camada: conjunta, referências e piso
-print(report.to_markdown())           # também: report.to_frame(), report.to_json("r.json")
+report = interp.evaluate()            # readings per layer: joint, baselines and floor
+print(report.to_markdown())           # also: report.to_frame(), report.to_json("r.json")
 
-interp.plot_report(report)            # leituras × camadas
-interp.plot_embedding()               # o espaço de cada camada nos seus dois modos dominantes
-interp.plot_gram("layer2")            # componentes, produto de Hadamard e Gram final
-interp.plot_spectrum("layer2")        # autovalores e posto de participação
+interp.plot_report(report)            # readings × layers
+interp.plot_embedding()               # each layer's space in its two dominant modes
+interp.plot_gram("layer2")            # components, Hadamard product and final Gram
+interp.plot_spectrum("layer2")        # eigenvalues and participation rank
 
-expl = interp.explain_pair(0)         # por que a amostra 0 difere do vizinho mais próximo
-expl.top(5)                           #   com outra predição? [(atributo, x_i, x_j, parcela)]
-expl.plot()                           # parcela de cada atributo, camada a camada
-interp.swap_test(50)                  # validação por trocas: método × |Δx| × aleatória
+expl = interp.explain_pair(0)         # why does object 0 differ from its nearest neighbour
+expl.top(5)                           #   with another prediction? [(feature, x_i, x_j, share)]
+expl.plot()                           # each feature's share, layer by layer
+interp.swap_test(50)                  # swap validation: method × |Δx| × random
 
-emap = interp.energy_map(image, "layer2")   # CNN: energia retida em cada posição da imagem
+emap = interp.energy_map(image, "layer2")   # CNN: retained energy at each position of the image
 ```
 
-Por padrão, cada camada fornece três fontes, como no artigo:
+By default each layer provides three sources, as in the paper:
 
-| fonte | o que é |
+| source | what it is |
 |---|---|
-| `activations` | a saída da camada, reduzida a uma grade comum de posições |
-| `gradients` | a derivada da margem contrastiva `f_c − média(f_{c'≠c})` em relação a essa saída |
-| `parameters` | os filtros que o objeto ativou, `p[:, s] = Σ_c A[c, s] W[c, :]` |
+| `activations` | the layer's output, pooled to a common grid of positions |
+| `gradients` | the derivative of the contrastive margin `f_c − mean(f_{c'≠c})` with respect to that output |
+| `parameters` | the filters the object activated, `p[:, s] = Σ_c A[c, s] W[c, :]` |
 
-e o *pipeline* `"paper"`: *kernel* linear, `(T_a(K) + J)/2` em cada componente, produto de Hadamard
-e `T_tr ∘ T_c`.
+The default pipeline is `"paper"`: a linear *kernel*, `(T_a(K) + J)/2` on each component, the
+Hadamard product, and `T_tr ∘ T_c`.
 
-### Dois cuidados que o código impõe
+### Two safeguards built into the code
 
-* **Alvo do gradiente.** Com `target="predicted"`, o gradiente carrega a própria predição, e as
-  leituras sobre a decisão ficam circulares. O padrão é `target="fixed"` (classe `fixed_class`
-  para todos os objetos).
-* **Piso.** Toda leitura precisa de uma referência. Passe `reference_model` (a mesma arquitetura
-  com os pesos iniciais): o relatório mede a geometria dessa rede contra o comportamento da rede
-  treinada, de modo que a única diferença entre a leitura e o seu piso é o treinamento.
+* **Gradient target.** With `target="predicted"`, the gradient carries the prediction itself, and
+  readings about the decision become circular. The default is `target="fixed"` (class
+  `fixed_class` for every object).
+* **Floor.** Every reading needs a reference. Pass `reference_model` (the same architecture with
+  its initial weights). The report measures that network's geometry against the trained network's
+  behaviour, so the only difference between a reading and its floor is training.
 
-## Sua própria matriz de Gram
+## One module per kind of data
 
-Qualquer componente pode vir de um *kernel* seu, de uma transformação sua ou de uma matriz que
-você já calculou:
+Since 0.4.0, each kind of data has its own entry point. Each one is an `Interpreter` with suitable
+defaults and the same methods, and gives the same numbers as `fa.Interpreter` with the same
+options. The modules load on first access, so `import fannar` stays light.
+
+```python
+import fannar as fa
+
+fa.tabular.TabularInterpreter(model, df_test, y_test, layers=[...])  # PyTorch on tables; the DataFrame gives the names
+fa.image.ImageInterpreter(cnn, loader, y_test, layers=[...])         # CNN/ViT, (N, C, H, W) outputs, grid=4
+fa.text.TextInterpreter(fa.text.wrap_hf(hf_model, pad_token_id=0), input_ids, y)  # transformers over tokens
+fa.tree.TreeInterpreter(tree, df_test, y_test, X_train=df_train)     # scikit-learn tree, slack in standard deviations
+```
+
+| module | for | what it adds |
+|---|---|---|
+| `fannar.tabular` | PyTorch models over rows of features | takes a `DataFrame`/`Series`: feature and class names |
+| `fannar.image` | CNNs and ViTs | `grid=4`, `DataLoader` input, energy maps per position |
+| `fannar.text` | transformers over token sequences | `layout="tokens"`, `grid=8`, `wrap_hf`, layers = encoder blocks |
+| `fannar.tree` | scikit-learn decision trees | slack scale from `X_train`, labels of any type |
+
+## Examples
+
+They all run offline in seconds, on datasets that ship with scikit-learn or on synthetic data
+(`pip install "fannar[all]"`, then `python examples/<script>.py`):
+
+| script | module | what it shows |
+|---|---|---|
+| [`quickstart_digits.py`](examples/quickstart_digits.py) | `fannar.tabular` | the full tour: report, plots, pairs, swap test |
+| [`tabular_wine.py`](examples/tabular_wine.py) | `fannar.tabular` | `DataFrame` and categorical labels, pairs and errors |
+| [`tree_wine.py`](examples/tree_wine.py) | `fannar.tree` | depths as layers, text labels, a tree as the floor |
+| [`image_digits_cnn.py`](examples/image_digits_cnn.py) | `fannar.image` | `DataLoader` input, energy map of one image |
+| [`text_keywords.py`](examples/text_keywords.py) | `fannar.text` | `wrap_hf`, automatic layers, energy per token in each block |
+| [`custom_gram.py`](examples/custom_gram.py) | `fannar` | your own sources, kernels and Gram matrices, no model |
+
+## Your own Gram matrix
+
+Any component can come from a *kernel* of yours, a transform of yours, or a matrix you have
+already computed:
 
 ```python
 pipe = fa.KernelPipeline(
     {
-        "estado":   fa.Component(fa.Linear(), fa.angular() >> fa.shift(1.0)),
-        "texto":    fa.Component(fa.RBF(gamma=0.1), fa.identity),
-        "meu":      fa.Component(lambda A, B: (A @ B.T + 1) ** 2),      # qualquer função k(X, Y)
+        "state":  fa.Component(fa.Linear(), fa.angular() >> fa.shift(1.0)),
+        "text":   fa.Component(fa.RBF(gamma=0.1), fa.identity),
+        "mine":   fa.Component(lambda A, B: (A @ B.T + 1) ** 2),     # any function k(X, Y)
     },
     final=fa.center >> fa.trace_normalize,
 )
-space = pipe(sources={"estado": S, "texto": T, "meu": M}, labels=y)
-space = pipe(grams={"estado": K1, "texto": K2, "meu": K3})           # matrizes já prontas
-space = fa.GramSpace(minha_matriz_psd, labels=y)                     # ou direto uma G sua
+space = pipe(sources={"state": S, "text": T, "mine": M}, labels=y)
+space = pipe(grams={"state": K1, "text": K2, "mine": K3})           # ready-made matrices
+space = fa.GramSpace(my_psd_matrix, labels=y)                      # or a G of your own, directly
 ```
 
-Transformações disponíveis (compõem com `>>`, da esquerda para a direita): `identity`, `center`,
+Available transforms (they compose with `>>`, left to right): `identity`, `center`,
 `trace_normalize`, `frobenius_normalize`, `max_eig_normalize`, `angular()`, `shift(c)`,
 `whiten()`, `spectral(f)`, `psd_project()`. *Kernels*: `Linear`, `Cosine`, `RBF`, `Polynomial`,
 `FunctionKernel`. *Presets*: `fa.paper_pipeline()`, `fa.single_source("activations")`,
 `fa.positions_pipeline()`.
 
-> Com *kernels* gaussianos, o produto de Hadamard vira identicamente uma soma das métricas das
-> fontes (o produto de gaussianas é a gaussiana da soma dos expoentes). Para preservar a interação
-> multiplicativa entre as fontes, prefira `Linear`/`Cosine`.
+> With Gaussian *kernels*, the Hadamard product becomes exactly a sum of the sources' metrics (the
+> product of Gaussians is the Gaussian of the sum of the exponents). To keep the multiplicative
+> interaction between sources, prefer `Linear`/`Cosine`.
 
-## O espaço de representação (`GramSpace`)
-
-```python
-space.distances               # pseudométrica d(i,j)² = G_ii + G_jj − 2 G_ij
-space.neighbors(i, k)         # k vizinhos mais próximos
-space.level_band(i, r, delta) # faixa de nível Γ_{r,δ}(i)
-space.equivalence_classes()   # objetos indistinguíveis para este espaço
-space.participation_rank()    # (tr G)² / ‖G‖²_F, sem decomposição espectral
-space.energies()              # E_∥, E_⊥ e E_ratio por objeto
-space.containment(labels)     # direções de classe dentro de V_r (r = K − 1)
-space.embedding(2)            # coordenadas nos dois modos dominantes (PCA de núcleo)
-space.cka(outra)              # alinhamento centrado
-space.decompose(K)            # G = a·K + R: o que K explica e o resíduo
-```
-
-## Outros modelos
+## The representation space (`GramSpace`)
 
 ```python
-# árvore de decisão do scikit-learn: fontes caminho, folga e distribuição de classes por profundidade
-interp = fa.Interpreter(tree, X_test, y_test)
-
-# qualquer modelo: uma função que devolve {camada: {fonte: array}} e as predições
-def fontes(X):
-    return {"saida": {"proba": modelo.predict_proba(X), "folhas": modelo.apply(X)}}, modelo.predict(X)
-
-interp = fa.Interpreter(modelo, X_test, y_test, extractor=fontes,
-                        pipeline=fa.KernelPipeline(["proba", "folhas"]), baselines={})
+space.distances               # pseudometric d(i,j)² = G_ii + G_jj − 2 G_ij
+space.neighbors(i, k)         # k nearest neighbours
+space.level_band(i, r, delta) # level band Γ_{r,δ}(i)
+space.equivalence_classes()   # objects this space cannot tell apart
+space.participation_rank()    # (tr G)² / ‖G‖²_F, without a spectral decomposition
+space.energies()              # E_∥, E_⊥ and E_ratio per object
+space.containment(labels)     # class directions inside V_r (r = K − 1)
+space.embedding(2)            # coordinates in the two dominant modes (kernel PCA)
+space.cka(other)              # centred alignment
+space.decompose(K)            # G = a·K + R: what K explains, and the residual
 ```
 
-## Leituras do relatório
+## Other models
 
-| leitura | pergunta |
+```python
+# scikit-learn decision tree: path, slack and class distribution per depth
+interp = fa.Interpreter(tree, X_test, y_test)          # or fa.tree.TreeInterpreter, above
+
+# any model: a function returning {layer: {source: array}} and the predictions
+def sources(X):
+    return {"output": {"proba": model.predict_proba(X), "leaves": model.apply(X)}}, model.predict(X)
+
+interp = fa.Interpreter(model, X_test, y_test, extractor=sources,
+                        pipeline=fa.KernelPipeline(["proba", "leaves"]), baselines={})
+```
+
+## Report readings
+
+| reading | question |
 |---|---|
-| `knn_prediction` | os vizinhos de um objeto têm a mesma predição que ele? |
-| `correctness_auc` | a margem geométrica antecipa onde o modelo erra? |
-| `confusion_agreement` | as classes que o modelo confunde estão próximas? (≥ 5 classes) |
-| `containment` | as direções de classe estão no subespaço retido? |
-| `e_ratio_error_auc` | a energia fora do subespaço retido sinaliza os erros? |
+| `knn_prediction` | do an object's neighbours share its prediction? |
+| `correctness_auc` | does the geometric margin anticipate where the model errs? |
+| `confusion_agreement` | are the classes the model confuses close to each other? (≥ 5 classes) |
+| `containment` | are the class directions inside the retained subspace? |
+| `e_ratio_error_auc` | does the energy outside the retained subspace flag the errors? |
 
-## Custo
+## Cost
 
-Por matriz de Gram, `Θ(n²D + n³)` com a decomposição espectral completa (`n` objetos, `D` a
-dimensão total das fontes); o posto de participação sai em `Θ(n²)`. A explicação de um par custa
-uma passagem direta e uma reversa sobre `F + 2` linhas, linear no número de atributos `F`.
+Per Gram matrix, `Θ(n²D + n³)` with the full spectral decomposition (`n` objects, `D` the total
+dimension of the sources). The participation rank takes `Θ(n²)`. A pair explanation costs one
+forward and one backward pass over `F + 2` rows, linear in the number of features `F`.
 
-## Testes
+## Tests
 
 ```bash
 pip install -e ".[test]" && pytest
 ```
 
-## Documentação
+## Documentation
 
-O site de documentação fica em `docs/lib/` (Markdown, MkDocs Material) e a referência da
-API sai das docstrings. Ele é publicado em `fannar.fernandocsdm.com/docs` pelo projeto do
-portfólio, que serve os arquivos estáticos:
+The documentation site lives in `docs/lib/` (Markdown, MkDocs Material), and the API reference is
+generated from the docstrings. It is published at `fannar.fernandocsdm.com/docs` by the portfolio
+project, which serves the static files:
 
 ```bash
 pip install -e ".[docs]"
-mkdocs serve                        # prévia em http://127.0.0.1:8000/docs/
-bash scripts/publish_docs.sh        # build e cópia para ../Portfolio/public/fannar/docs
+mkdocs serve                        # preview at http://127.0.0.1:8000/docs/
+bash scripts/publish_docs.sh        # build and copy to ../Portfolio/public/fannar/docs
 ```
 
-Depois é só fazer commit e deploy do portfólio.
+Then commit and deploy the portfolio.
 
-## Licença
+## License
 
 This work is licensed under a
 [Creative Commons Attribution-NonCommercial 4.0 International License][cc-by-nc].
 
 [![CC BY-NC 4.0][cc-by-nc-image]][cc-by-nc]
 
-O texto completo está em [`LICENCE`](https://github.com/FernandoCsm-Knight/Fannar/blob/main/LICENCE). Para uso comercial do método, há o serviço de
-interpretabilidade em [fannar.fernandocsdm.com](https://fannar.fernandocsdm.com).
+The full text is in [`LICENCE`](https://github.com/FernandoCsm-Knight/Fannar/blob/main/LICENCE). For
+commercial use of the method, see the interpretability service at
+[fannar.fernandocsdm.com](https://fannar.fernandocsdm.com).
 
 [cc-by-nc]: https://creativecommons.org/licenses/by-nc/4.0/
 [cc-by-nc-image]: https://licensebuttons.net/l/by-nc/4.0/88x31.png
