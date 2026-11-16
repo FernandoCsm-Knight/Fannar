@@ -1,6 +1,23 @@
-# Trees and other models
+# Choosing a module
 
-[`Interpreter`](../reference/interpreter.md) picks the sources from the type of the model:
+Since 0.4.0 there is one entry point per kind of data. Each is a thin
+[`Interpreter`](../reference/interpreter.md) with sensible defaults and the same methods, and it
+gives the same numbers as `fa.Interpreter` with the same options:
+
+| data / model | module | class | guide |
+|---|---|---|---|
+| PyTorch model on tabular rows | `fannar.tabular` | `TabularInterpreter` | [Tabular data](tabular.md) |
+| PyTorch CNN or ViT on images | `fannar.image` | `ImageInterpreter` | [Images](image.md) |
+| PyTorch transformer on tokens (Hugging Face included) | `fannar.text` | `TextInterpreter` | [Text](text.md) |
+| scikit-learn decision tree | `fannar.tree` | `TreeInterpreter` | [Decision trees](tree.md) |
+| anything else | `fannar` | `Interpreter(extractor=...)` | [below](#any-other-model) |
+
+```python
+import fannar as fa
+fa.tabular.TabularInterpreter    # the modules load on first access; no extra import needed
+```
+
+`fa.Interpreter` still picks the sources from the type of the model, as in earlier versions:
 
 | model | sources | "layers" |
 |---|---|---|
@@ -8,9 +25,10 @@
 | scikit-learn tree (has `tree_` and `decision_path`) | `TreeSources`: path, slack, classes | each depth, `depth1 … depthD` |
 | anything else | your `extractor` function | whatever your function returns |
 
-## PyTorch models
+## PyTorch options
 
-Any classifier that returns logits `(N, K)` works: MLPs, CNNs, residual networks, transformers.
+These options apply to `TabularInterpreter`, `ImageInterpreter`, `TextInterpreter` and to
+`fa.Interpreter` with a PyTorch model. Any classifier that returns logits `(N, K)` works.
 Name the modules to probe as they appear in `model.named_modules()`; with `layers=None`, every
 direct child that has parameters is probed.
 
@@ -26,37 +44,12 @@ The keyword arguments that `Interpreter` does not know are passed to `TorchSourc
 |---|---|---|
 | `target` | `"fixed"` | class of the contrastive margin: `"fixed"`, `"predicted"` or an `int` |
 | `fixed_class` | `0` | the class used by `target="fixed"` |
-| `grid` | `4` | positions kept per spatial or token axis (`None` keeps all) |
-| `layout` | `"channels"` | `"tokens"` for outputs shaped `(N, L, C)` |
+| `grid` | `4` (`8` in `TextInterpreter`) | positions kept per spatial or token axis (`None` keeps all) |
+| `layout` | `"channels"` (`"tokens"` in `TextInterpreter`) | `"tokens"` for outputs shaped `(N, L, C)` |
 | `sources` | all three | a subset of `("parameters", "activations", "gradients")` |
 | `weight_modules` | automatic | `{layer: module or name}` whose weight defines the parameter source |
 | `margin` | `"contrastive"` | or a callable `fn(logits, target) -> (N,)` |
 | `device`, `batch_size` | model's device, `256` | |
-
-### CNNs
-
-A convolutional output `(N, C, H, W)` is average-pooled to `grid × grid` positions, so each
-object has `C × grid²` values per source. For a map of where the model's energy sits inside one
-image, use the positions of that image as the objects:
-
-```python
-emap = interp.energy_map(image, "layer2")          # (h, w) retained energy per position
-interp.plot_energy_map(image, "layer2", image=rgb) # over the picture, values in [0, 1]
-```
-
-### Transformers
-
-Modules that return a tuple are probed on their first tensor. For hidden states shaped
-`(N, L, C)`, pass `layout="tokens"` so that the channels are the last axis:
-
-```python
-interp = fa.Interpreter(model, input_ids, y, layers=[f"encoder.layer.{t}" for t in range(6)],
-                        layout="tokens", grid=8)
-```
-
-If your model takes several inputs (attention masks, token types) or returns an object instead of
-a logits tensor, as Hugging Face models do, wrap it in a module whose `forward` takes one tensor
-and returns the logits. The layer names are then prefixed by the wrapper's attribute name.
 
 ### The parameter source
 
@@ -65,28 +58,6 @@ probed module's own weight or, inside a block, the last module up to it whose we
 rows as the output has channels (`conv2` in a residual block, the `Linear` before a probed
 activation). When none fits, the parameter source is skipped with a warning; point to the right
 module with `weight_modules={"layer": "path.to.module"}`.
-
-## Decision trees
-
-A fitted scikit-learn `DecisionTreeClassifier` gets its own instantiation of the sources, one
-"layer" per depth. At depth $l$ each object has:
-
-- `path`: indicator of the nodes visited up to depth $l$ (the state of the tree);
-- `slack`: $(x_f - t)/\sigma_f$ at every internal node already crossed, i.e. how far the object
-  is from switching branch (the tree's sensitivity);
-- `classes`: the class distribution of the node the object reaches at depth $l$.
-
-```python
-from sklearn.tree import DecisionTreeClassifier
-
-tree = DecisionTreeClassifier(max_depth=5).fit(X_train, y_train)
-interp = fa.Interpreter(tree, X_test, y_test, feature_names=names,
-                        scale=X_train.std(0))     # slack in standard deviations
-report = interp.evaluate()
-```
-
-With trees, the default pipeline becomes `KernelPipeline(["path", "slack", "classes"])` and the
-baseline is the path alone. `scale` and `depths` are passed to `TreeSources`.
 
 ## Any other model
 

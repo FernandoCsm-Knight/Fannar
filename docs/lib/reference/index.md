@@ -7,6 +7,7 @@ module path is shown. The pages are generated from the docstrings in
 | page | contents |
 |---|---|
 | [Interpreter](interpreter.md) | `Interpreter`: the high-level entry point |
+| [Domain modules](domains.md) | `fannar.tabular`, `fannar.image`, `fannar.text`, `fannar.tree` |
 | [KernelPipeline](pipeline.md) | `KernelPipeline`, `Component`, presets |
 | [GramSpace](space.md) | `GramSpace`: geometry, spectrum, comparison |
 | [Kernels](kernels.md) | `Linear`, `Cosine`, `RBF`, `Polynomial`, `FunctionKernel`, `Kernel` |

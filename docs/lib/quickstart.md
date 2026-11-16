@@ -49,16 +49,24 @@ model.eval()
 
 ## 3. Build the interpreter
 
+Each 64-pixel image is a row of 64 features here, so the entry point is
+[`fannar.tabular`](guides/tabular.md):
+
 ```python
 import fannar as fa
+from fannar.tabular import TabularInterpreter
 
-interp = fa.Interpreter(
+interp = TabularInterpreter(
     model, X_te, y_te,                        # the trained model and the objects to interpret
     layers=["block1", "block2", "block3"],    # names from model.named_modules()
     reference_model=initial,                  # optional, but recommended: the floor
     feature_names=[f"pixel{t}" for t in range(64)],
 )
 ```
+
+`TabularInterpreter` is an `fa.Interpreter` with defaults for tables. `fa.Interpreter` takes the
+same arguments and gives the same numbers. For images, token sequences and trees, see
+[Choosing a module](guides/other-models.md).
 
 Nothing is computed yet. The first call that needs the spaces runs `interp.fit()`, which
 extracts the sources of every layer in one pass over `X_te` and builds one
@@ -123,6 +131,7 @@ interp.plot_report(report).savefig("report.png", dpi=150)
 
 ## Next steps
 
+- [Examples](examples.md): one runnable script per kind of data, with its output.
 - [The method](concepts.md): what the three sources are and why the defaults are what they are.
-- [Trees and other models](guides/other-models.md): scikit-learn trees, CNNs, transformers and
-  any model through a function.
+- [Choosing a module](guides/other-models.md): `fannar.tabular`, `fannar.image`, `fannar.text`,
+  `fannar.tree`, and any model through a function.

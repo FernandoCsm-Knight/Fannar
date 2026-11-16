@@ -241,7 +241,8 @@ class TorchSources:
         try:
             with torch.no_grad():
                 self.model.eval()
-                xb = torch.as_tensor(np.asarray(x) if not isinstance(x, torch.Tensor) else x)[None].to(self.device, self.dtype)
+                xb = torch.as_tensor(np.asarray(x) if not isinstance(x, torch.Tensor) else x)[None]
+                xb = xb.to(self.device, self.dtype) if xb.is_floating_point() else xb.to(self.device)
                 self.model(xb)
         finally:
             h.remove()

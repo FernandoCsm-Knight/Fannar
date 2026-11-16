@@ -82,6 +82,22 @@ The library keeps apart, as the paper does:
 
     [:octicons-arrow-right-24: Quick start](quickstart.md)
 
+-   **Examples**
+
+    ---
+
+    Runnable scripts for tables, trees, images and text, with the output they print.
+
+    [:octicons-arrow-right-24: Examples](examples.md)
+
+-   **By kind of data**
+
+    ---
+
+    `fannar.tabular`, `fannar.image`, `fannar.text` and `fannar.tree`: one entry point each.
+
+    [:octicons-arrow-right-24: Choosing a module](guides/other-models.md)
+
 -   **The method**
 
     ---

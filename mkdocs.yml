@@ -128,10 +128,15 @@ nav:
       - Overview: index.md
       - Installation: installation.md
       - Quick start: quickstart.md
+      - Examples: examples.md
       - The method: concepts.md
       - Guides:
+          - Choosing a module: guides/other-models.md
+          - Tabular data: guides/tabular.md
+          - Images: guides/image.md
+          - Text and token sequences: guides/text.md
+          - Decision trees: guides/tree.md
           - Your own Gram matrices: guides/custom-gram.md
-          - Trees and other models: guides/other-models.md
           - The representation space: guides/gram-space.md
           - Readings and reports: guides/readings.md
           - Explanations: guides/explanations.md
@@ -139,6 +144,7 @@ nav:
   - API reference:
       - reference/index.md
       - Interpreter: reference/interpreter.md
+      - Domain modules: reference/domains.md
       - KernelPipeline: reference/pipeline.md
       - GramSpace: reference/space.md
       - Kernels: reference/kernels.md

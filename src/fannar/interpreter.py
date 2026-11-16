@@ -35,6 +35,14 @@ def _is_torch(model) -> bool:
     return isinstance(model, nn.Module)
 
 
+def require_torch(module: str) -> None:
+    """Raises a clear ``ImportError`` when PyTorch, needed by ``module``, is not installed."""
+    try:
+        import torch  # noqa: F401
+    except ImportError:
+        raise ImportError(f'{module} needs PyTorch: pip install "fannar[torch]"') from None
+
+
 def _is_sklearn_tree(model) -> bool:
     return hasattr(model, "tree_") and hasattr(model, "decision_path")
 
